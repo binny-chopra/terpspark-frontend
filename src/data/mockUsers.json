@@ -1,0 +1,61 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "student@umd.edu",
+      "password": "student123",
+      "role": "student",
+      "name": "John Doe",
+      "profileImage": null,
+      "createdAt": "2025-01-15T10:00:00Z",
+      "lastLogin": "2025-10-28T14:30:00Z"
+    },
+    {
+      "id": 2,
+      "email": "organizer@umd.edu",
+      "password": "organizer123",
+      "role": "organizer",
+      "name": "Jane Smith",
+      "profileImage": null,
+      "isApproved": true,
+      "department": "Student Affairs",
+      "createdAt": "2025-01-10T10:00:00Z",
+      "approvedAt": "2025-01-12T09:00:00Z",
+      "lastLogin": "2025-10-28T13:15:00Z"
+    },
+    {
+      "id": 3,
+      "email": "admin@umd.edu",
+      "password": "admin123",
+      "role": "admin",
+      "name": "Admin User",
+      "profileImage": null,
+      "permissions": ["all"],
+      "createdAt": "2025-01-01T10:00:00Z",
+      "lastLogin": "2025-10-28T15:00:00Z"
+    },
+    {
+      "id": 4,
+      "email": "student2@umd.edu",
+      "password": "student123",
+      "role": "student",
+      "name": "Sarah Johnson",
+      "profileImage": null,
+      "createdAt": "2025-02-10T10:00:00Z",
+      "lastLogin": "2025-10-27T18:45:00Z"
+    },
+    {
+      "id": 5,
+      "email": "organizer2@umd.edu",
+      "password": "organizer123",
+      "role": "organizer",
+      "name": "Michael Chen",
+      "profileImage": null,
+      "isApproved": true,
+      "department": "Computer Science",
+      "createdAt": "2025-02-15T10:00:00Z",
+      "approvedAt": "2025-02-16T11:30:00Z",
+      "lastLogin": "2025-10-28T12:00:00Z"
+    }
+  ]
+}
