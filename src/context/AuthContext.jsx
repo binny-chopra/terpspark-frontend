@@ -25,13 +25,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const result = await authService.login(email, password);
-    
+
     if (result.success) {
       setUser(result.user);
       navigate(ROUTES.DASHBOARD);
       return { success: true };
     }
-    
+
     return { success: false, error: result.error };
   };
 

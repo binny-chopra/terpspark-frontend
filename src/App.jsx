@@ -4,7 +4,7 @@ import { AuthProvider } from '@context/AuthContext';
 import ProtectedRoute from '@components/common/ProtectedRoute';
 import LoginPage from '@pages/LoginPage';
 import DashboardPage from '@pages/DashboardPage';
-import LoadingSpinner from '@components/common/LoadingSpinner';
+import EventsPage from '@pages/EventsPage';
 
 function App() {
   return (
@@ -17,6 +17,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events"
+            element={
+              <ProtectedRoute>
+                <EventsPage />
               </ProtectedRoute>
             }
           />

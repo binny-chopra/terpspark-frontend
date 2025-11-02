@@ -116,11 +116,10 @@ const LoginPage = () => {
             <button
               onClick={handleSubmit}
               disabled={isLoading}
-              className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-                isLoading
+              className={`w-full py-3 rounded-lg font-semibold transition-colors ${isLoading
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-red-600 text-white hover:bg-red-700'
-              }`}
+                }`}
             >
               {isLoading ? 'Signing in...' : 'Sign In with SSO'}
             </button>

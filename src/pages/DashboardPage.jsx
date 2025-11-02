@@ -1,11 +1,13 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@context/AuthContext';
 import Header from '@components/layout/Header';
 import Navigation from '@components/layout/Navigation';
-import { USER_ROLES } from '@utils/constants';
+import { USER_ROLES, ROUTES } from '@utils/constants';
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const getRoleContent = () => {
     const content = {
@@ -17,8 +19,8 @@ const DashboardPage = () => {
           { label: 'My Registrations', value: '3', color: 'bg-green-50 text-green-700', bgColor: 'bg-green-500' },
           { label: 'Attended', value: '12', color: 'bg-purple-50 text-purple-700', bgColor: 'bg-purple-500' }
         ],
-        primaryAction: 'Browse Events',
-        secondaryAction: 'View My Registrations'
+        primaryAction: { label: 'Browse Events', path: ROUTES.EVENTS },
+        secondaryAction: { label: 'View My Registrations', path: ROUTES.MY_REGISTRATIONS }
       },
       [USER_ROLES.ORGANIZER]: {
         title: 'Organizer Dashboard',
@@ -28,8 +30,8 @@ const DashboardPage = () => {
           { label: 'Total Attendees', value: '156', color: 'bg-green-50 text-green-700', bgColor: 'bg-green-500' },
           { label: 'Pending Approval', value: '2', color: 'bg-orange-50 text-orange-700', bgColor: 'bg-orange-500' }
         ],
-        primaryAction: 'Create New Event',
-        secondaryAction: 'View My Events'
+        primaryAction: { label: 'Create New Event', path: ROUTES.CREATE_EVENT },
+        secondaryAction: { label: 'View My Events', path: ROUTES.MY_EVENTS }
       },
       [USER_ROLES.ADMIN]: {
         title: 'Admin Dashboard',
@@ -39,8 +41,8 @@ const DashboardPage = () => {
           { label: 'Pending Approvals', value: '5', color: 'bg-orange-50 text-orange-700', bgColor: 'bg-orange-500' },
           { label: 'Active Organizers', value: '23', color: 'bg-green-50 text-green-700', bgColor: 'bg-green-500' }
         ],
-        primaryAction: 'View Pending Approvals',
-        secondaryAction: 'Manage Categories'
+        primaryAction: { label: 'View Pending Approvals', path: ROUTES.APPROVALS },
+        secondaryAction: { label: 'Manage Categories', path: ROUTES.MANAGEMENT }
       }
     };
 
@@ -53,7 +55,7 @@ const DashboardPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <Navigation />
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
@@ -64,8 +66,8 @@ const DashboardPage = () => {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {roleContent.stats.map((stat, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
             >
               <div className="flex items-center justify-between mb-3">
@@ -84,11 +86,17 @@ const DashboardPage = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button className="px-6 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors shadow-sm">
-              {roleContent.primaryAction}
+            <button
+              onClick={() => navigate(roleContent.primaryAction.path)}
+              className="px-6 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors shadow-sm"
+            >
+              {roleContent.primaryAction.label}
             </button>
-            <button className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-              {roleContent.secondaryAction}
+            <button
+              onClick={() => navigate(roleContent.secondaryAction.path)}
+              className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+            >
+              {roleContent.secondaryAction.label}
             </button>
           </div>
         </div>
@@ -101,8 +109,8 @@ const DashboardPage = () => {
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">System initialized successfully</p>
-                  <p className="text-xs text-gray-500">Just now</p>
+                  <p className="text-sm font-medium text-gray-900">Phase 2 features now available!</p>
+                  <p className="text-xs text-gray-500">Browse and discover campus events</p>
                 </div>
               </div>
             </div>
@@ -110,8 +118,8 @@ const DashboardPage = () => {
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Welcome to TerpSpark Phase 1</p>
-                  <p className="text-xs text-gray-500">1 minute ago</p>
+                  <p className="text-sm font-medium text-gray-900">8 new events published this week</p>
+                  <p className="text-xs text-gray-500">Check them out in Browse Events</p>
                 </div>
               </div>
             </div>

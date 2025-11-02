@@ -1,0 +1,299 @@
+{
+  "events": [
+    {
+      "id": 1,
+      "title": "Fall Career Fair 2025",
+      "description": "Connect with top employers from tech, finance, consulting, and more. Bring your resume and dress professionally. All majors welcome!",
+      "category": "career",
+      "organizer": {
+        "id": 2,
+        "name": "Jane Smith",
+        "email": "organizer@umd.edu"
+      },
+      "date": "2025-11-15",
+      "startTime": "10:00",
+      "endTime": "16:00",
+      "venue": "Stamp Student Union - Grand Ballroom",
+      "location": "Stamp Student Union",
+      "capacity": 500,
+      "registeredCount": 347,
+      "waitlistCount": 23,
+      "status": "published",
+      "imageUrl": null,
+      "tags": ["career", "networking", "professional"],
+      "createdAt": "2025-10-01T09:00:00Z",
+      "publishedAt": "2025-10-02T10:00:00Z",
+      "isFeatured": true
+    },
+    {
+      "id": 2,
+      "title": "TerpHacks 2025 - Hackathon",
+      "description": "36-hour hackathon for students to build innovative projects. Mentorship, workshops, prizes, and free food included. Team up or work solo!",
+      "category": "technology",
+      "organizer": {
+        "id": 5,
+        "name": "Michael Chen",
+        "email": "organizer2@umd.edu"
+      },
+      "date": "2025-11-20",
+      "startTime": "18:00",
+      "endTime": "2025-11-22T06:00",
+      "venue": "Iribe Center",
+      "location": "Iribe Center for Computer Science",
+      "capacity": 200,
+      "registeredCount": 185,
+      "waitlistCount": 45,
+      "status": "published",
+      "imageUrl": null,
+      "tags": ["technology", "coding", "competition"],
+      "createdAt": "2025-09-15T09:00:00Z",
+      "publishedAt": "2025-09-16T10:00:00Z",
+      "isFeatured": true
+    },
+    {
+      "id": 3,
+      "title": "Mental Health Awareness Workshop",
+      "description": "Learn about stress management, mindfulness, and campus mental health resources. Free and confidential. Light refreshments provided.",
+      "category": "wellness",
+      "organizer": {
+        "id": 2,
+        "name": "Jane Smith",
+        "email": "organizer@umd.edu"
+      },
+      "date": "2025-11-08",
+      "startTime": "14:00",
+      "endTime": "16:00",
+      "venue": "Health Center - Room 2201",
+      "location": "University Health Center",
+      "capacity": 50,
+      "registeredCount": 38,
+      "waitlistCount": 0,
+      "status": "published",
+      "imageUrl": null,
+      "tags": ["wellness", "mental-health", "workshop"],
+      "createdAt": "2025-10-10T09:00:00Z",
+      "publishedAt": "2025-10-11T10:00:00Z",
+      "isFeatured": false
+    },
+    {
+      "id": 4,
+      "title": "International Food Festival",
+      "description": "Celebrate diversity with food from around the world! Try dishes from 20+ countries. Cultural performances throughout the day.",
+      "category": "cultural",
+      "organizer": {
+        "id": 5,
+        "name": "Michael Chen",
+        "email": "organizer2@umd.edu"
+      },
+      "date": "2025-11-12",
+      "startTime": "11:00",
+      "endTime": "15:00",
+      "venue": "Memorial Chapel Lawn",
+      "location": "Memorial Chapel",
+      "capacity": 300,
+      "registeredCount": 156,
+      "waitlistCount": 0,
+      "status": "published",
+      "imageUrl": null,
+      "tags": ["cultural", "food", "diversity"],
+      "createdAt": "2025-10-05T09:00:00Z",
+      "publishedAt": "2025-10-06T10:00:00Z",
+      "isFeatured": true
+    },
+    {
+      "id": 5,
+      "title": "Study Abroad Info Session",
+      "description": "Explore study abroad opportunities. Learn about programs, scholarships, and application process. Q&A with students who studied abroad.",
+      "category": "academic",
+      "organizer": {
+        "id": 2,
+        "name": "Jane Smith",
+        "email": "organizer@umd.edu"
+      },
+      "date": "2025-11-10",
+      "startTime": "17:00",
+      "endTime": "18:30",
+      "venue": "Hornbake Library - Room 6137",
+      "location": "Hornbake Library",
+      "capacity": 80,
+      "registeredCount": 67,
+      "waitlistCount": 5,
+      "status": "published",
+      "imageUrl": null,
+      "tags": ["academic", "study-abroad", "international"],
+      "createdAt": "2025-10-08T09:00:00Z",
+      "publishedAt": "2025-10-09T10:00:00Z",
+      "isFeatured": false
+    },
+    {
+      "id": 6,
+      "title": "Basketball Game vs. Duke",
+      "description": "Cheer on the Terps! Student tickets available. Wear red and get ready for an exciting rivalry game. Gates open 1 hour before tipoff.",
+      "category": "sports",
+      "organizer": {
+        "id": 5,
+        "name": "Michael Chen",
+        "email": "organizer2@umd.edu"
+      },
+      "date": "2025-11-18",
+      "startTime": "19:00",
+      "endTime": "21:30",
+      "venue": "XFINITY Center",
+      "location": "XFINITY Center",
+      "capacity": 1000,
+      "registeredCount": 892,
+      "waitlistCount": 134,
+      "status": "published",
+      "imageUrl": null,
+      "tags": ["sports", "basketball", "rivalry"],
+      "createdAt": "2025-09-20T09:00:00Z",
+      "publishedAt": "2025-09-21T10:00:00Z",
+      "isFeatured": true
+    },
+    {
+      "id": 7,
+      "title": "Open Mic Night",
+      "description": "Showcase your talent! Music, poetry, comedy, or anything creative. Sign up to perform or come to support fellow students.",
+      "category": "arts",
+      "organizer": {
+        "id": 2,
+        "name": "Jane Smith",
+        "email": "organizer@umd.edu"
+      },
+      "date": "2025-11-14",
+      "startTime": "19:30",
+      "endTime": "22:00",
+      "venue": "Stamp Student Union - Hoff Theater",
+      "location": "Stamp Student Union",
+      "capacity": 150,
+      "registeredCount": 89,
+      "waitlistCount": 0,
+      "status": "published",
+      "imageUrl": null,
+      "tags": ["arts", "performance", "entertainment"],
+      "createdAt": "2025-10-12T09:00:00Z",
+      "publishedAt": "2025-10-13T10:00:00Z",
+      "isFeatured": false
+    },
+    {
+      "id": 8,
+      "title": "Sustainability Workshop",
+      "description": "Learn how to reduce your carbon footprint on campus. Topics: recycling, composting, sustainable living tips. Free reusable items for attendees!",
+      "category": "environmental",
+      "organizer": {
+        "id": 5,
+        "name": "Michael Chen",
+        "email": "organizer2@umd.edu"
+      },
+      "date": "2025-11-09",
+      "startTime": "13:00",
+      "endTime": "14:30",
+      "venue": "Kim Engineering Building - Room 1100",
+      "location": "Kim Engineering Building",
+      "capacity": 60,
+      "registeredCount": 43,
+      "waitlistCount": 0,
+      "status": "published",
+      "imageUrl": null,
+      "tags": ["environmental", "sustainability", "workshop"],
+      "createdAt": "2025-10-15T09:00:00Z",
+      "publishedAt": "2025-10-16T10:00:00Z",
+      "isFeatured": false
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "name": "Academic",
+      "slug": "academic",
+      "description": "Academic events, lectures, and educational programs",
+      "color": "blue"
+    },
+    {
+      "id": 2,
+      "name": "Career",
+      "slug": "career",
+      "description": "Career fairs, workshops, and professional development",
+      "color": "green"
+    },
+    {
+      "id": 3,
+      "name": "Cultural",
+      "slug": "cultural",
+      "description": "Cultural celebrations and diversity events",
+      "color": "purple"
+    },
+    {
+      "id": 4,
+      "name": "Sports",
+      "slug": "sports",
+      "description": "Athletic events and sports activities",
+      "color": "red"
+    },
+    {
+      "id": 5,
+      "name": "Arts",
+      "slug": "arts",
+      "description": "Arts, music, theater, and creative performances",
+      "color": "pink"
+    },
+    {
+      "id": 6,
+      "name": "Technology",
+      "slug": "technology",
+      "description": "Tech workshops, hackathons, and innovation events",
+      "color": "indigo"
+    },
+    {
+      "id": 7,
+      "name": "Wellness",
+      "slug": "wellness",
+      "description": "Health, fitness, and mental wellness programs",
+      "color": "teal"
+    },
+    {
+      "id": 8,
+      "name": "Environmental",
+      "slug": "environmental",
+      "description": "Sustainability and environmental awareness events",
+      "color": "emerald"
+    }
+  ],
+  "venues": [
+    {
+      "id": 1,
+      "name": "Stamp Student Union",
+      "building": "Stamp Student Union",
+      "capacity": 500,
+      "facilities": ["AV Equipment", "Wheelchair Accessible", "WiFi"]
+    },
+    {
+      "id": 2,
+      "name": "Iribe Center",
+      "building": "Iribe Center for Computer Science",
+      "capacity": 300,
+      "facilities": ["Tech Equipment", "Wheelchair Accessible", "WiFi", "Power Outlets"]
+    },
+    {
+      "id": 3,
+      "name": "XFINITY Center",
+      "building": "XFINITY Center",
+      "capacity": 2000,
+      "facilities": ["Large Venue", "Wheelchair Accessible", "Concessions"]
+    },
+    {
+      "id": 4,
+      "name": "Hornbake Library",
+      "building": "Hornbake Library",
+      "capacity": 100,
+      "facilities": ["Quiet Space", "Wheelchair Accessible", "WiFi"]
+    },
+    {
+      "id": 5,
+      "name": "Memorial Chapel",
+      "building": "Memorial Chapel",
+      "capacity": 400,
+      "facilities": ["Outdoor Space", "Wheelchair Accessible"]
+    }
+  ]
+}
