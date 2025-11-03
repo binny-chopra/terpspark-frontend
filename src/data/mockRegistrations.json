@@ -1,0 +1,71 @@
+{
+  "registrations": [
+    {
+      "id": 1,
+      "userId": 1,
+      "eventId": 3,
+      "status": "confirmed",
+      "registeredAt": "2025-10-25T14:30:00Z",
+      "checkInStatus": "not_checked_in",
+      "ticketCode": "TKT-001-MGH2025",
+      "guests": [],
+      "sessions": [],
+      "qrCode": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' fill='white'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-size='12' fill='black'%3ETKT-001-MGH2025%3C/text%3E%3C/svg%3E",
+      "reminderSent": false,
+      "cancelledAt": null
+    },
+    {
+      "id": 2,
+      "userId": 1,
+      "eventId": 5,
+      "status": "confirmed",
+      "registeredAt": "2025-10-26T10:15:00Z",
+      "checkInStatus": "not_checked_in",
+      "ticketCode": "TKT-002-SAI2025",
+      "guests": [],
+      "sessions": [],
+      "qrCode": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' fill='white'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-size='12' fill='black'%3ETKT-002-SAI2025%3C/text%3E%3C/svg%3E",
+      "reminderSent": false,
+      "cancelledAt": null
+    },
+    {
+      "id": 3,
+      "userId": 1,
+      "eventId": 7,
+      "status": "confirmed",
+      "registeredAt": "2025-10-27T16:45:00Z",
+      "checkInStatus": "not_checked_in",
+      "ticketCode": "TKT-003-OMN2025",
+      "guests": [
+        {
+          "id": 1,
+          "name": "Sarah Johnson",
+          "email": "student2@umd.edu",
+          "userId": 4
+        }
+      ],
+      "sessions": [],
+      "qrCode": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' fill='white'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-size='12' fill='black'%3ETKT-003-OMN2025%3C/text%3E%3C/svg%3E",
+      "reminderSent": true,
+      "cancelledAt": null
+    }
+  ],
+  "waitlist": [
+    {
+      "id": 1,
+      "userId": 4,
+      "eventId": 2,
+      "position": 23,
+      "joinedAt": "2025-10-26T12:00:00Z",
+      "notificationPreference": "email"
+    },
+    {
+      "id": 2,
+      "userId": 4,
+      "eventId": 6,
+      "position": 78,
+      "joinedAt": "2025-10-27T09:30:00Z",
+      "notificationPreference": "email_sms"
+    }
+  ]
+}

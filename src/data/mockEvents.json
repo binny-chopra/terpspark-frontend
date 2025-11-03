@@ -41,7 +41,7 @@
       "venue": "Iribe Center",
       "location": "Iribe Center for Computer Science",
       "capacity": 200,
-      "registeredCount": 185,
+      "registeredCount": 200,
       "waitlistCount": 45,
       "status": "published",
       "imageUrl": null,
@@ -141,7 +141,7 @@
       "venue": "XFINITY Center",
       "location": "XFINITY Center",
       "capacity": 1000,
-      "registeredCount": 892,
+      "registeredCount": 1000,
       "waitlistCount": 134,
       "status": "published",
       "imageUrl": null,
@@ -199,6 +199,31 @@
       "createdAt": "2025-10-15T09:00:00Z",
       "publishedAt": "2025-10-16T10:00:00Z",
       "isFeatured": false
+    },
+    {
+      "id": 9,
+      "title": "Exclusive Tech Talk with Google Engineers",
+      "description": "Limited seats! Join us for an intimate tech talk with senior engineers from Google. Learn about cutting-edge AI, career paths, and get your questions answered. Pizza and networking after!",
+      "category": "technology",
+      "organizer": {
+        "id": 2,
+        "name": "Jane Smith",
+        "email": "organizer@umd.edu"
+      },
+      "date": "2025-11-13",
+      "startTime": "18:00",
+      "endTime": "20:00",
+      "venue": "Iribe Center - Room 0318",
+      "location": "Iribe Center for Computer Science",
+      "capacity": 30,
+      "registeredCount": 30,
+      "waitlistCount": 67,
+      "status": "published",
+      "imageUrl": null,
+      "tags": ["technology", "career", "networking", "tech-talk"],
+      "createdAt": "2025-10-20T09:00:00Z",
+      "publishedAt": "2025-10-21T10:00:00Z",
+      "isFeatured": true
     }
   ],
   "categories": [

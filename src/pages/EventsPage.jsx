@@ -1,19 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Grid, List } from 'lucide-react';
+import { useAuth } from '@context/AuthContext';
 import Header from '@components/layout/Header';
 import Navigation from '@components/layout/Navigation';
 import EventCard from '@components/events/EventCard';
 import EventFilters from '@components/events/EventFilters';
 import EventDetailModal from '@components/events/EventDetailModal';
+import RegistrationModal from '@components/registration/RegistrationModal';
 import LoadingSpinner from '@components/common/LoadingSpinner';
 import { getAllEvents } from '@services/eventService';
+import { registerForEvent, checkRegistrationStatus } from '@services/registrationService';
+import { isEventFull } from '@utils/eventUtils';
 
 const EventsPage = () => {
+    const { user } = useAuth();
     const [events, setEvents] = useState([]);
     const [filteredEvents, setFilteredEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedEvent, setSelectedEvent] = useState(null);
-    const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+    const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+    const [registrationEvent, setRegistrationEvent] = useState(null);
+    const [isWaitlistRegistration, setIsWaitlistRegistration] = useState(false);
+    const [viewMode, setViewMode] = useState('grid');
     const [filters, setFilters] = useState({
         search: '',
         category: 'all',
@@ -73,10 +81,46 @@ const EventsPage = () => {
         setSelectedEvent(null);
     };
 
-    const handleRegister = (event) => {
-        // This will be implemented in Phase 3
-        alert(`Registration for "${event.title}" will be implemented in Phase 3!`);
+    const handleRegister = async (event) => {
+        // Check if already registered
+        const status = await checkRegistrationStatus(user.id, event.id);
+
+        if (status.isRegistered) {
+            alert('You are already registered for this event!');
+            setSelectedEvent(null);
+            return;
+        }
+
+        if (status.isWaitlisted) {
+            alert('You are already on the waitlist for this event!');
+            setSelectedEvent(null);
+            return;
+        }
+
+        // Determine if this should be a waitlist registration
+        const isFull = isEventFull(event.capacity, event.registeredCount);
+        setIsWaitlistRegistration(isFull);
+        setRegistrationEvent(event);
+        setShowRegistrationModal(true);
         setSelectedEvent(null);
+    };
+
+    const handleRegistrationSubmit = async (formData) => {
+        const result = await registerForEvent(user.id, registrationEvent.id, formData);
+
+        if (result.success) {
+            alert(result.message);
+            setShowRegistrationModal(false);
+            setRegistrationEvent(null);
+            loadEvents(); // Reload to update capacity
+        } else {
+            alert(result.error || 'Registration failed. Please try again.');
+        }
+    };
+
+    const handleCloseRegistration = () => {
+        setShowRegistrationModal(false);
+        setRegistrationEvent(null);
     };
 
     if (loading) {
@@ -178,6 +222,16 @@ const EventsPage = () => {
                     event={selectedEvent}
                     onClose={handleCloseModal}
                     onRegister={handleRegister}
+                />
+            )}
+
+            {/* Registration Modal */}
+            {showRegistrationModal && registrationEvent && (
+                <RegistrationModal
+                    event={registrationEvent}
+                    onClose={handleCloseRegistration}
+                    onSubmit={handleRegistrationSubmit}
+                    isWaitlist={isWaitlistRegistration}
                 />
             )}
         </div>
