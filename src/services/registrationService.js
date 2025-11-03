@@ -155,13 +155,29 @@ export const registerForEvent = async (userId, eventId, registrationData = {}) =
 
         const registrations = getRegistrationsFromStorage();
 
-        // Check capacity
-        const currentRegistrations = registrations.filter(r => r.eventId === eventId && r.status === 'confirmed').length;
-        const isEventFull = currentRegistrations >= event.capacity;
+        // CRITICAL FIX: Use the event's registeredCount from mock data
+        // This represents the current actual capacity from the database
+        const currentCapacity = event.registeredCount;
+
+        // Calculate total attendees including guests
+        const totalNewAttendees = 1 + (registrationData.guests?.length || 0);
+
+        // Check if event is full using the event's registeredCount
+        const isEventFull = currentCapacity >= event.capacity;
+
 
         if (isEventFull) {
             // Add to waitlist instead
             return await addToWaitlist(userId, eventId, registrationData);
+        }
+
+        // Check if there's enough capacity for user + guests
+        const remainingCapacity = event.capacity - confirmedRegistrationsCount;
+        if (totalNewAttendees > remainingCapacity) {
+            return {
+                success: false,
+                error: `Only ${remainingCapacity} spot(s) remaining. Please reduce number of guests or join the waitlist.`
+            };
         }
 
         // Create new registration
@@ -183,8 +199,8 @@ export const registerForEvent = async (userId, eventId, registrationData = {}) =
         registrations.push(newRegistration);
         saveRegistrationsToStorage(registrations);
 
-        // Update event capacity (in real app, backend would handle this)
-        event.registeredCount++;
+        // Update event capacity in mockEvents (for current session only)
+        event.registeredCount = confirmedRegistrationsCount + totalNewAttendees;
 
         return {
             success: true,
@@ -192,6 +208,7 @@ export const registerForEvent = async (userId, eventId, registrationData = {}) =
             registration: newRegistration
         };
     } catch (error) {
+        console.error('Registration error:', error);
         return {
             success: false,
             error: 'Failed to register for event'
@@ -285,7 +302,8 @@ export const cancelRegistration = async (userId, registrationId) => {
         // Update event capacity
         const event = mockEvents.events.find(e => e.id === registration.eventId);
         if (event && event.registeredCount > 0) {
-            event.registeredCount--;
+            const guestCount = registration.guests?.length || 0;
+            event.registeredCount -= (1 + guestCount);
         }
 
         // Promote from waitlist if available
@@ -402,6 +420,5 @@ export const downloadTicket = (registration) => {
         registeredAt: registration.registeredAt
     };
 
-    console.log('Downloading ticket:', ticketData);
     alert('Ticket download will be implemented with backend integration');
 };
