@@ -42,6 +42,7 @@ export const ROUTES = {
   MY_REGISTRATIONS: '/my-registrations',
   MY_EVENTS: '/my-events',
   CREATE_EVENT: '/create-event',
+  EVENT_ATTENDEES: '/event-attendees',
   APPROVALS: '/approvals',
   MANAGEMENT: '/management',
   AUDIT_LOGS: '/audit-logs'

@@ -165,14 +165,26 @@ export const registerForEvent = async (userId, eventId, registrationData = {}) =
         // Check if event is full using the event's registeredCount
         const isEventFull = currentCapacity >= event.capacity;
 
+        console.log('=== CAPACITY CHECK ===', {
+            eventTitle: event.title,
+            eventId,
+            eventCapacity: event.capacity,
+            currentRegisteredCount: currentCapacity,
+            totalNewAttendees,
+            isEventFull,
+            willAddToWaitlist: isEventFull
+        });
 
         if (isEventFull) {
+            console.log('🔴 EVENT IS FULL - Adding to waitlist');
             // Add to waitlist instead
             return await addToWaitlist(userId, eventId, registrationData);
         }
 
+        console.log('🟢 EVENT HAS SPACE - Proceeding with registration');
+
         // Check if there's enough capacity for user + guests
-        const remainingCapacity = event.capacity - confirmedRegistrationsCount;
+        const remainingCapacity = event.capacity - currentCapacity;
         if (totalNewAttendees > remainingCapacity) {
             return {
                 success: false,
@@ -200,7 +212,9 @@ export const registerForEvent = async (userId, eventId, registrationData = {}) =
         saveRegistrationsToStorage(registrations);
 
         // Update event capacity in mockEvents (for current session only)
-        event.registeredCount = confirmedRegistrationsCount + totalNewAttendees;
+        event.registeredCount = currentCapacity + totalNewAttendees;
+
+        console.log('✅ Registration successful, new capacity:', event.registeredCount);
 
         return {
             success: true,
@@ -420,5 +434,6 @@ export const downloadTicket = (registration) => {
         registeredAt: registration.registeredAt
     };
 
+    console.log('Downloading ticket:', ticketData);
     alert('Ticket download will be implemented with backend integration');
 };
