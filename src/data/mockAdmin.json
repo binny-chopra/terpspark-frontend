@@ -1,0 +1,339 @@
+{
+    "pendingOrganizers": [
+        {
+            "id": 1,
+            "userId": 6,
+            "name": "Dr. Emily Watson",
+            "email": "ewatson@umd.edu",
+            "department": "Physics",
+            "reason": "Faculty member organizing department seminars and physics outreach events for students",
+            "requestedAt": "2025-10-28T10:00:00Z",
+            "status": "pending"
+        },
+        {
+            "id": 2,
+            "userId": 7,
+            "name": "Marcus Johnson",
+            "email": "mjohnson@umd.edu",
+            "department": "Student Government",
+            "reason": "SGA representative planning campus-wide student engagement events",
+            "requestedAt": "2025-10-29T14:30:00Z",
+            "status": "pending"
+        }
+    ],
+    "pendingEvents": [
+        {
+            "id": 1,
+            "eventId": 10,
+            "title": "Physics Department Seminar: Quantum Computing",
+            "description": "Join us for an exciting seminar on the latest developments in quantum computing and its applications in physics research.",
+            "category": "academic",
+            "organizer": {
+                "id": 2,
+                "name": "Jane Smith",
+                "email": "organizer@umd.edu"
+            },
+            "date": "2025-11-25",
+            "startTime": "15:00",
+            "endTime": "17:00",
+            "venue": "Physics Building - Room 1410",
+            "capacity": 100,
+            "submittedAt": "2025-10-29T14:00:00Z",
+            "status": "pending"
+        },
+        {
+            "id": 2,
+            "eventId": 11,
+            "title": "Winter Wellness Fair",
+            "description": "Annual wellness fair featuring health screenings, fitness demonstrations, and mental health resources for students.",
+            "category": "wellness",
+            "organizer": {
+                "id": 5,
+                "name": "Michael Chen",
+                "email": "organizer2@umd.edu"
+            },
+            "date": "2025-12-01",
+            "startTime": "10:00",
+            "endTime": "16:00",
+            "venue": "Stamp Student Union - Grand Ballroom",
+            "capacity": 500,
+            "submittedAt": "2025-10-30T09:15:00Z",
+            "status": "pending"
+        }
+    ],
+    "auditLogs": [
+        {
+            "id": 1,
+            "timestamp": "2025-10-28T08:00:00Z",
+            "action": "USER_LOGIN",
+            "actor": {
+                "id": 3,
+                "name": "Admin User",
+                "role": "admin"
+            },
+            "target": null,
+            "details": "Successful admin login",
+            "ipAddress": "192.168.1.100"
+        },
+        {
+            "id": 2,
+            "timestamp": "2025-10-28T08:15:00Z",
+            "action": "ORGANIZER_APPROVED",
+            "actor": {
+                "id": 3,
+                "name": "Admin User",
+                "role": "admin"
+            },
+            "target": {
+                "type": "user",
+                "id": 2,
+                "name": "Jane Smith"
+            },
+            "details": "Organizer account approved for Student Affairs department",
+            "ipAddress": "192.168.1.100"
+        },
+        {
+            "id": 3,
+            "timestamp": "2025-10-28T09:30:00Z",
+            "action": "EVENT_APPROVED",
+            "actor": {
+                "id": 3,
+                "name": "Admin User",
+                "role": "admin"
+            },
+            "target": {
+                "type": "event",
+                "id": 1,
+                "name": "Fall Career Fair 2025"
+            },
+            "details": "Event approved and published",
+            "ipAddress": "192.168.1.100"
+        },
+        {
+            "id": 4,
+            "timestamp": "2025-10-28T10:00:00Z",
+            "action": "ORGANIZER_REQUEST",
+            "actor": {
+                "id": 6,
+                "name": "Dr. Emily Watson",
+                "role": "student"
+            },
+            "target": null,
+            "details": "New organizer request submitted",
+            "ipAddress": "192.168.1.105"
+        },
+        {
+            "id": 5,
+            "timestamp": "2025-10-28T11:00:00Z",
+            "action": "CATEGORY_CREATED",
+            "actor": {
+                "id": 3,
+                "name": "Admin User",
+                "role": "admin"
+            },
+            "target": {
+                "type": "category",
+                "id": 8,
+                "name": "Environmental"
+            },
+            "details": "New event category created",
+            "ipAddress": "192.168.1.100"
+        },
+        {
+            "id": 6,
+            "timestamp": "2025-10-28T14:00:00Z",
+            "action": "EVENT_CREATED",
+            "actor": {
+                "id": 2,
+                "name": "Jane Smith",
+                "role": "organizer"
+            },
+            "target": {
+                "type": "event",
+                "id": 3,
+                "name": "Mental Health Workshop"
+            },
+            "details": "New event draft created",
+            "ipAddress": "192.168.1.110"
+        },
+        {
+            "id": 7,
+            "timestamp": "2025-10-28T14:30:00Z",
+            "action": "EVENT_SUBMITTED",
+            "actor": {
+                "id": 2,
+                "name": "Jane Smith",
+                "role": "organizer"
+            },
+            "target": {
+                "type": "event",
+                "id": 3,
+                "name": "Mental Health Workshop"
+            },
+            "details": "Event submitted for approval",
+            "ipAddress": "192.168.1.110"
+        },
+        {
+            "id": 8,
+            "timestamp": "2025-10-28T15:00:00Z",
+            "action": "REGISTRATION",
+            "actor": {
+                "id": 1,
+                "name": "John Doe",
+                "role": "student"
+            },
+            "target": {
+                "type": "event",
+                "id": 3,
+                "name": "Mental Health Workshop"
+            },
+            "details": "Student registered for event",
+            "ipAddress": "192.168.1.115"
+        },
+        {
+            "id": 9,
+            "timestamp": "2025-10-29T09:00:00Z",
+            "action": "CHECK_IN",
+            "actor": {
+                "id": 1,
+                "name": "John Doe",
+                "role": "student"
+            },
+            "target": {
+                "type": "event",
+                "id": 1,
+                "name": "Fall Career Fair 2025"
+            },
+            "details": "Attendee checked in via QR scan",
+            "ipAddress": "192.168.1.120"
+        },
+        {
+            "id": 10,
+            "timestamp": "2025-10-29T10:00:00Z",
+            "action": "EVENT_CANCELLED",
+            "actor": {
+                "id": 5,
+                "name": "Michael Chen",
+                "role": "organizer"
+            },
+            "target": {
+                "type": "event",
+                "id": 5,
+                "name": "Cancelled Event"
+            },
+            "details": "Event cancelled by organizer",
+            "ipAddress": "192.168.1.125"
+        },
+        {
+            "id": 11,
+            "timestamp": "2025-10-29T11:00:00Z",
+            "action": "VENUE_UPDATED",
+            "actor": {
+                "id": 3,
+                "name": "Admin User",
+                "role": "admin"
+            },
+            "target": {
+                "type": "venue",
+                "id": 2,
+                "name": "Iribe Center"
+            },
+            "details": "Venue capacity updated from 250 to 300",
+            "ipAddress": "192.168.1.100"
+        },
+        {
+            "id": 12,
+            "timestamp": "2025-10-29T14:00:00Z",
+            "action": "ROLE_CHANGE",
+            "actor": {
+                "id": 3,
+                "name": "Admin User",
+                "role": "admin"
+            },
+            "target": {
+                "type": "user",
+                "id": 5,
+                "name": "Michael Chen"
+            },
+            "details": "User role changed from student to organizer",
+            "ipAddress": "192.168.1.100"
+        }
+    ],
+    "analytics": {
+        "summary": {
+            "totalEvents": 47,
+            "totalRegistrations": 1234,
+            "totalAttendance": 987,
+            "noShows": 247,
+            "activeOrganizers": 23,
+            "pendingApprovals": 4
+        },
+        "byCategory": [
+            {
+                "category": "Academic",
+                "events": 8,
+                "registrations": 245,
+                "attendance": 198
+            },
+            {
+                "category": "Career",
+                "events": 6,
+                "registrations": 420,
+                "attendance": 356
+            },
+            {
+                "category": "Cultural",
+                "events": 7,
+                "registrations": 189,
+                "attendance": 145
+            },
+            {
+                "category": "Sports",
+                "events": 5,
+                "registrations": 156,
+                "attendance": 134
+            },
+            {
+                "category": "Arts",
+                "events": 6,
+                "registrations": 98,
+                "attendance": 76
+            },
+            {
+                "category": "Technology",
+                "events": 8,
+                "registrations": 78,
+                "attendance": 52
+            },
+            {
+                "category": "Wellness",
+                "events": 4,
+                "registrations": 34,
+                "attendance": 18
+            },
+            {
+                "category": "Environmental",
+                "events": 3,
+                "registrations": 14,
+                "attendance": 8
+            }
+        ],
+        "byMonth": [
+            {
+                "month": "Sep 2025",
+                "events": 12,
+                "registrations": 320
+            },
+            {
+                "month": "Oct 2025",
+                "events": 18,
+                "registrations": 456
+            },
+            {
+                "month": "Nov 2025",
+                "events": 17,
+                "registrations": 458
+            }
+        ]
+    }
+}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Calendar, Users, Shield, Home, Plus } from 'lucide-react';
+import { Calendar, Users, Shield, Home, Plus, FileText, Tag, BarChart2 } from 'lucide-react';
 import { useAuth } from '@context/AuthContext';
 import { USER_ROLES, ROUTES } from '@utils/constants';
 
@@ -27,8 +27,9 @@ const Navigation = () => {
       [USER_ROLES.ADMIN]: [
         { id: 'events', label: 'All Events', icon: Calendar, path: ROUTES.EVENTS },
         { id: 'approvals', label: 'Approvals', icon: Shield, path: ROUTES.APPROVALS },
-        { id: 'management', label: 'Management', icon: Users, path: ROUTES.MANAGEMENT },
-        { id: 'audit', label: 'Audit Logs', icon: Shield, path: ROUTES.AUDIT_LOGS }
+        { id: 'management', label: 'Management', icon: Tag, path: ROUTES.MANAGEMENT },
+        { id: 'analytics', label: 'Analytics', icon: BarChart2, path: ROUTES.ANALYTICS },
+        { id: 'audit', label: 'Audit Logs', icon: FileText, path: ROUTES.AUDIT_LOGS }
       ]
     };
 
@@ -58,8 +59,8 @@ const Navigation = () => {
                 key={item.id}
                 onClick={() => handleNavClick(item)}
                 className={`flex items-center space-x-2 px-4 py-3 border-b-2 transition-colors whitespace-nowrap ${active
-                    ? 'border-red-600 text-red-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                  ? 'border-red-600 text-red-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
                   }`}
                 aria-label={item.label}
               >
