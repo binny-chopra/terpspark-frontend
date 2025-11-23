@@ -225,3 +225,19 @@ export const searchEvents = async (query) => {
         };
     }
 };
+
+export async function getAllCategories() {
+    try {
+        const response = await fetch('/api/categories');
+        const data = await response.json();
+
+        return {
+            success: response.ok,
+            data: data.categories || [],
+            error: data.error
+        };
+    } catch (error) {
+        console.error('Failed to load categories:', error);
+        return { success: false, error: 'Failed to load categories' };
+    }
+}

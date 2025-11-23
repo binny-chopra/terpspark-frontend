@@ -1,0 +1,162 @@
+[
+    {
+        "id": 1,
+        "eventId": 3,
+        "userId": 1,
+        "registrationId": 1,
+        "checkedInAt": "2025-11-08T14:05:00Z",
+        "checkedInBy": {
+            "id": 2,
+            "name": "Jane Smith",
+            "role": "organizer"
+        },
+        "method": "qr_scan",
+        "attendeeName": "John Doe",
+        "attendeeEmail": "student@umd.edu",
+        "guestCount": 0
+    },
+    {
+        "id": 2,
+        "eventId": 3,
+        "userId": 5,
+        "registrationId": 8,
+        "checkedInAt": "2025-11-08T14:10:00Z",
+        "checkedInBy": {
+            "id": 2,
+            "name": "Jane Smith",
+            "role": "organizer"
+        },
+        "method": "manual",
+        "attendeeName": "Emily Davis",
+        "attendeeEmail": "emily.davis@umd.edu",
+        "guestCount": 2
+    },
+    {
+        "id": 3,
+        "eventId": 3,
+        "userId": 7,
+        "registrationId": 12,
+        "checkedInAt": "2025-11-08T14:15:00Z",
+        "checkedInBy": {
+            "id": 2,
+            "name": "Jane Smith",
+            "role": "organizer"
+        },
+        "method": "qr_scan",
+        "attendeeName": "Michael Chen",
+        "attendeeEmail": "mchen@umd.edu",
+        "guestCount": 1
+    },
+    {
+        "id": 4,
+        "eventId": 3,
+        "userId": 9,
+        "registrationId": 15,
+        "checkedInAt": "2025-11-08T14:22:00Z",
+        "checkedInBy": {
+            "id": 2,
+            "name": "Jane Smith",
+            "role": "organizer"
+        },
+        "method": "search",
+        "attendeeName": "Sarah Johnson",
+        "attendeeEmail": "sjohnson@umd.edu",
+        "guestCount": 0
+    },
+    {
+        "id": 5,
+        "eventId": 3,
+        "userId": 11,
+        "registrationId": 18,
+        "checkedInAt": "2025-11-08T14:30:00Z",
+        "checkedInBy": {
+            "id": 2,
+            "name": "Jane Smith",
+            "role": "organizer"
+        },
+        "method": "qr_scan",
+        "attendeeName": "David Martinez",
+        "attendeeEmail": "dmartinez@umd.edu",
+        "guestCount": 0
+    },
+    {
+        "id": 6,
+        "eventId": 1,
+        "userId": 3,
+        "registrationId": 20,
+        "checkedInAt": "2025-10-15T09:00:00Z",
+        "checkedInBy": {
+            "id": 2,
+            "name": "Jane Smith",
+            "role": "organizer"
+        },
+        "method": "qr_scan",
+        "attendeeName": "Alice Brown",
+        "attendeeEmail": "abrown@umd.edu",
+        "guestCount": 1
+    },
+    {
+        "id": 7,
+        "eventId": 1,
+        "userId": 4,
+        "registrationId": 21,
+        "checkedInAt": "2025-10-15T09:05:00Z",
+        "checkedInBy": {
+            "id": 2,
+            "name": "Jane Smith",
+            "role": "organizer"
+        },
+        "method": "manual",
+        "attendeeName": "Robert Taylor",
+        "attendeeEmail": "rtaylor@umd.edu",
+        "guestCount": 0
+    },
+    {
+        "id": 8,
+        "eventId": 1,
+        "userId": 6,
+        "registrationId": 22,
+        "checkedInAt": "2025-10-15T09:12:00Z",
+        "checkedInBy": {
+            "id": 2,
+            "name": "Jane Smith",
+            "role": "organizer"
+        },
+        "method": "qr_scan",
+        "attendeeName": "Jessica White",
+        "attendeeEmail": "jwhite@umd.edu",
+        "guestCount": 2
+    },
+    {
+        "id": 9,
+        "eventId": 5,
+        "userId": 8,
+        "registrationId": 25,
+        "checkedInAt": "2025-11-01T14:00:00Z",
+        "checkedInBy": {
+            "id": 2,
+            "name": "Jane Smith",
+            "role": "organizer"
+        },
+        "method": "qr_scan",
+        "attendeeName": "Christopher Lee",
+        "attendeeEmail": "clee@umd.edu",
+        "guestCount": 0
+    },
+    {
+        "id": 10,
+        "eventId": 5,
+        "userId": 10,
+        "registrationId": 27,
+        "checkedInAt": "2025-11-01T14:08:00Z",
+        "checkedInBy": {
+            "id": 2,
+            "name": "Jane Smith",
+            "role": "organizer"
+        },
+        "method": "manual",
+        "attendeeName": "Amanda Garcia",
+        "attendeeEmail": "agarcia@umd.edu",
+        "guestCount": 1
+    }
+]

@@ -1,11 +1,42 @@
-import React, { useState } from 'react';
-import { User, LogOut, Calendar, Menu, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { User, LogOut, Calendar, Menu, X, Bell } from 'lucide-react';
 import { useAuth } from '@context/AuthContext';
 import { ROLE_LABELS, ROLE_COLORS, APP_NAME } from '@utils/constants';
+import { getUnreadCount } from '@services/notificationService';
 
 const Header = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+      loadUnreadCount();
+      // Poll for updates every 30 seconds
+      const interval = setInterval(loadUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const loadUnreadCount = async () => {
+    if (!user) return;
+
+    try {
+      const result = await getUnreadCount(user.id);
+      if (result.success) {
+        setUnreadCount(result.data.count);
+      }
+    } catch (error) {
+      console.error('Failed to load unread count:', error);
+    }
+  };
+
+  const handleNotificationClick = () => {
+    navigate('/notifications');
+    setMobileMenuOpen(false);
+  };
 
   const getRoleBadge = () => {
     return ROLE_COLORS[user.role] || ROLE_COLORS.student;
@@ -25,6 +56,20 @@ const Header = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Phase 6: Notification Bell */}
+            <button
+              onClick={handleNotificationClick}
+              className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Notifications"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+
             <div className="flex items-center space-x-3 px-3 py-1.5 bg-gray-50 rounded-lg">
               <User className="w-5 h-5 text-gray-600" />
               <div className="text-sm">
@@ -46,7 +91,21 @@ const Header = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center space-x-2">
+            {/* Phase 6: Mobile Notification Bell */}
+            <button
+              onClick={handleNotificationClick}
+              className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Notifications"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
@@ -68,6 +127,23 @@ const Header = () => {
                   {ROLE_LABELS[user.role]}
                 </span>
               </div>
+
+              {/* Phase 6: Mobile Notifications Link */}
+              <button
+                onClick={handleNotificationClick}
+                className="w-full flex items-center justify-between px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <div className="flex items-center space-x-2">
+                  <Bell className="w-4 h-4" />
+                  <span className="text-sm font-medium">Notifications</span>
+                </div>
+                {unreadCount > 0 && (
+                  <span className="bg-red-600 text-white text-xs font-bold rounded-full px-2 py-1">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
               <button
                 onClick={() => {
                   logout();

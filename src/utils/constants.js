@@ -47,7 +47,12 @@ export const ROUTES = {
   APPROVALS: '/approvals',
   MANAGEMENT: '/management',
   AUDIT_LOGS: '/audit-logs',
-  ANALYTICS: '/analytics'
+  ANALYTICS: '/analytics',
+  // Phase 6 routes
+  PROFILE: '/profile',
+  NOTIFICATIONS: '/notifications',
+  EDIT_EVENT: '/edit-event',
+  CHECKIN: '/checkin'
 };
 
 // Audit action types
@@ -73,5 +78,48 @@ export const AUDIT_ACTIONS = {
   VENUE_CREATED: 'VENUE_CREATED',
   VENUE_UPDATED: 'VENUE_UPDATED',
   VENUE_RETIRED: 'VENUE_RETIRED',
-  VENUE_REACTIVATED: 'VENUE_REACTIVATED'
+  VENUE_REACTIVATED: 'VENUE_REACTIVATED',
+  // Phase 6 audit actions
+  CHECKIN_PERFORMED: 'CHECKIN_PERFORMED',
+  CHECKIN_UNDONE: 'CHECKIN_UNDONE',
+  PROFILE_UPDATED: 'PROFILE_UPDATED',
+  NOTIFICATION_SENT: 'NOTIFICATION_SENT'
+};
+
+// Phase 6: Notification Types
+export const NOTIFICATION_TYPES = {
+  REGISTRATION_CONFIRMED: 'registration_confirmed',
+  EVENT_REMINDER: 'event_reminder',
+  EVENT_UPDATE: 'event_update',
+  EVENT_CANCELLED: 'event_cancelled',
+  WAITLIST_PROMOTED: 'waitlist_promoted',
+  WAITLIST_JOINED: 'waitlist_joined',
+  ANNOUNCEMENT: 'announcement',
+  ORGANIZER_APPROVED: 'organizer_approved',
+  ORGANIZER_REJECTED: 'organizer_rejected',
+  EVENT_APPROVED: 'event_approved',
+  EVENT_REJECTED: 'event_rejected',
+  SYSTEM: 'system'
+};
+
+// Phase 6: Check-in Methods
+export const CHECKIN_METHODS = {
+  QR_SCAN: 'qr_scan',
+  MANUAL: 'manual',
+  SEARCH: 'search'
+};
+
+// Phase 6: Event Status
+export const EVENT_STATUS = {
+  DRAFT: 'draft',
+  PENDING: 'pending',
+  PUBLISHED: 'published',
+  CANCELLED: 'cancelled'
+};
+
+// Phase 6: Registration Status
+export const REGISTRATION_STATUS = {
+  CONFIRMED: 'confirmed',
+  CANCELLED: 'cancelled',
+  WAITLISTED: 'waitlisted'
 };

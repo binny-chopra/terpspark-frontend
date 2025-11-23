@@ -19,6 +19,12 @@ import ManagementPage from '@pages/ManagementPage';
 import AuditLogsPage from '@pages/AuditLogsPage';
 import AnalyticsPage from '@pages/AnalyticsPage';
 
+// Phase 6 Pages
+import CheckInPage from '@pages/CheckInPage';
+import EditEventPage from '@pages/EditEventPage';
+import NotificationsPage from '@pages/NotificationsPage';
+import ProfilePage from '@pages/ProfilePage';
+
 function App() {
   return (
     <Router>
@@ -40,6 +46,26 @@ function App() {
             element={
               <ProtectedRoute>
                 <EventsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Phase 6: Profile (All authenticated users) */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Phase 6: Notifications (All authenticated users) */}
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsPage />
               </ProtectedRoute>
             }
           />
@@ -76,6 +102,26 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={[USER_ROLES.ORGANIZER, USER_ROLES.ADMIN]}>
                 <EventAttendeesPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Phase 6: Edit Event */}
+          <Route
+            path="/edit-event/:eventId"
+            element={
+              <ProtectedRoute allowedRoles={[USER_ROLES.ORGANIZER, USER_ROLES.ADMIN]}>
+                <EditEventPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Phase 6: Check-in */}
+          <Route
+            path="/checkin/:eventId"
+            element={
+              <ProtectedRoute allowedRoles={[USER_ROLES.ORGANIZER, USER_ROLES.ADMIN]}>
+                <CheckInPage />
               </ProtectedRoute>
             }
           />

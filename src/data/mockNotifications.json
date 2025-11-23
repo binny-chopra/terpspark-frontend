@@ -1,0 +1,129 @@
+[
+    {
+        "id": 1,
+        "userId": 1,
+        "type": "registration_confirmed",
+        "title": "Registration Confirmed",
+        "message": "You're registered for Mental Health Awareness Workshop",
+        "relatedEvent": {
+            "id": 3,
+            "title": "Mental Health Awareness Workshop"
+        },
+        "isRead": false,
+        "createdAt": "2025-10-28T15:30:00Z"
+    },
+    {
+        "id": 2,
+        "userId": 1,
+        "type": "event_reminder",
+        "title": "Event Reminder",
+        "message": "Mental Health Awareness Workshop starts tomorrow at 2:00 PM",
+        "relatedEvent": {
+            "id": 3,
+            "title": "Mental Health Awareness Workshop"
+        },
+        "isRead": false,
+        "createdAt": "2025-11-07T10:00:00Z"
+    },
+    {
+        "id": 3,
+        "userId": 1,
+        "type": "waitlist_promoted",
+        "title": "Moved from Waitlist",
+        "message": "You've been promoted from the waitlist for Career Fair 2025",
+        "relatedEvent": {
+            "id": 1,
+            "title": "Career Fair 2025"
+        },
+        "isRead": true,
+        "createdAt": "2025-10-25T14:20:00Z"
+    },
+    {
+        "id": 4,
+        "userId": 1,
+        "type": "event_update",
+        "title": "Event Update",
+        "message": "The venue for Tech Workshop Series has been changed to Stamp Student Union",
+        "relatedEvent": {
+            "id": 5,
+            "title": "Tech Workshop Series"
+        },
+        "isRead": true,
+        "createdAt": "2025-10-20T09:15:00Z"
+    },
+    {
+        "id": 5,
+        "userId": 1,
+        "type": "system",
+        "title": "Welcome to TerpSpark!",
+        "message": "Discover amazing campus events and connect with your community. Check out upcoming events now!",
+        "relatedEvent": null,
+        "isRead": true,
+        "createdAt": "2025-10-15T08:00:00Z"
+    },
+    {
+        "id": 6,
+        "userId": 1,
+        "type": "event_cancelled",
+        "title": "Event Cancelled",
+        "message": "Unfortunately, the Spring Festival has been cancelled due to weather conditions",
+        "relatedEvent": {
+            "id": 10,
+            "title": "Spring Festival"
+        },
+        "isRead": true,
+        "createdAt": "2025-10-12T16:45:00Z"
+    },
+    {
+        "id": 7,
+        "userId": 1,
+        "type": "announcement",
+        "title": "Important Announcement",
+        "message": "Please bring your student ID to the Career Fair for check-in",
+        "relatedEvent": {
+            "id": 1,
+            "title": "Career Fair 2025"
+        },
+        "isRead": true,
+        "createdAt": "2025-10-10T11:00:00Z"
+    },
+    {
+        "id": 8,
+        "userId": 2,
+        "type": "event_approved",
+        "title": "Event Approved",
+        "message": "Your event 'Tech Workshop Series' has been approved and published",
+        "relatedEvent": {
+            "id": 5,
+            "title": "Tech Workshop Series"
+        },
+        "isRead": false,
+        "createdAt": "2025-11-01T14:30:00Z"
+    },
+    {
+        "id": 9,
+        "userId": 2,
+        "type": "registration_confirmed",
+        "title": "New Registration",
+        "message": "A new attendee has registered for your event: Tech Workshop Series",
+        "relatedEvent": {
+            "id": 5,
+            "title": "Tech Workshop Series"
+        },
+        "isRead": false,
+        "createdAt": "2025-11-05T09:20:00Z"
+    },
+    {
+        "id": 10,
+        "userId": 2,
+        "type": "event_reminder",
+        "title": "Event Starting Soon",
+        "message": "Your event 'Tech Workshop Series' starts in 2 hours. Get ready!",
+        "relatedEvent": {
+            "id": 5,
+            "title": "Tech Workshop Series"
+        },
+        "isRead": true,
+        "createdAt": "2025-11-08T10:00:00Z"
+    }
+]

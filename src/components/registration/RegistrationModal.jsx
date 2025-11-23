@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Users, Mail, AlertCircle, CheckCircle } from 'lucide-react';
 import { formatEventDate, formatTimeRange } from '@utils/eventUtils';
 

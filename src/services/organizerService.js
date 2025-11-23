@@ -326,3 +326,36 @@ export const sendAnnouncement = async (eventId, message) => {
         };
     }
 };
+
+/**
+ * Get event by ID (from storage or mock data)
+ */
+export const getEventById = async (eventId) => {
+    try {
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const storedEvents = getOrganizerEventsFromStorage();
+        let event = storedEvents.find(e => e.id == eventId);
+
+        if (!event) {
+            event = mockEvents.events.find(e => e.id == eventId);
+        }
+
+        if (!event) {
+            return {
+                success: false,
+                error: 'Event not found'
+            };
+        }
+
+        return {
+            success: true,
+            data: event
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: 'Failed to load event'
+        };
+    }
+};
