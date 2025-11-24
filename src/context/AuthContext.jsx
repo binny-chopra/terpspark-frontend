@@ -26,13 +26,25 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const result = await authService.login(email, password);
 
-    if (result.success) {
+    if (result.success && result.user) {
       setUser(result.user);
       navigate(ROUTES.DASHBOARD);
       return { success: true };
     }
 
     return { success: false, error: result.error };
+  };
+
+  const completeLoginAfterOTP = async () => {
+    // After OTP verification, user is already stored in localStorage
+    // Just read it and set in context
+    const user = authService.getCurrentUser();
+    if (user) {
+      setUser(user);
+      navigate(ROUTES.DASHBOARD);
+      return { success: true };
+    }
+    return { success: false, error: 'Failed to complete login' };
   };
 
   const logout = () => {
@@ -46,6 +58,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     isAuthenticated: !!user,
     login,
+    completeLoginAfterOTP,
     logout
   };
 
