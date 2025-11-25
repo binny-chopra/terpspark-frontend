@@ -1,24 +1,19 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { flushTimers, setupServiceBeforeEach, setupServiceAfterEach } from '../helpers/testUtils';
 
 const ORGANIZER_EVENTS_KEY = 'terpspark_organizer_events';
-
-const flushTimers = async () => {
-  await vi.runAllTimersAsync();
-};
 
 describe('organizerService', () => {
   let organizerService;
 
   beforeEach(async () => {
-    vi.resetModules();
-    organizerService = await import('@services/organizerService');
+    organizerService = await setupServiceBeforeEach('@services/organizerService');
     localStorage.clear();
-    vi.useRealTimers();
   });
 
   afterEach(() => {
     localStorage.clear();
-    vi.useRealTimers();
+    setupServiceAfterEach();
   });
 
   it('returns organizer events combining mock and stored data', async () => {

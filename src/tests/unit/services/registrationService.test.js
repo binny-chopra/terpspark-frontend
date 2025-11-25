@@ -1,11 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
+import { flushTimers } from '../helpers/testUtils';
+
 const REGISTRATIONS_KEY = 'terpspark_registrations';
 const WAITLIST_KEY = 'terpspark_waitlist';
-
-const flushTimers = async () => {
-  await vi.runAllTimersAsync();
-};
 
 describe('registrationService', () => {
   let registrationService;

@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CreateEventPage from '@pages/CreateEventPage';
+import { getFieldByLabel } from '../helpers/testUtils';
+import '../setup/layoutMocks';
 
 const mockNavigate = vi.fn();
 const mockGetCategories = vi.fn();
@@ -12,14 +14,7 @@ vi.mock('@context/AuthContext', () => ({
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
-}));
-
-vi.mock('@components/layout/Header', () => ({
-  default: () => <div data-testid="header" />,
-}));
-
-vi.mock('@components/layout/Navigation', () => ({
-  default: () => <div data-testid="navigation" />,
+  useLocation: () => ({ pathname: '/organizer/events/create' }),
 }));
 
 vi.mock('@services/eventService', () => ({
@@ -34,11 +29,6 @@ const categoriesFixture = [
   { id: 'cat-1', name: 'Career', slug: 'career' },
   { id: 'cat-2', name: 'Social', slug: 'social' },
 ];
-
-const getFieldByLabel = (labelText) => {
-  const label = screen.getByText(labelText);
-  return label.parentElement.querySelector('input, textarea, select');
-};
 
 const fillValidForm = () => {
   fireEvent.change(screen.getByPlaceholderText(/fall career fair/i), {

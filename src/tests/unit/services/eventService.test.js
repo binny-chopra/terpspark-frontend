@@ -1,20 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-
-const flushTimers = async () => {
-  await vi.runAllTimersAsync();
-};
+import { flushTimers, setupServiceBeforeEach, setupServiceAfterEach } from '../helpers/testUtils';
 
 describe('eventService', () => {
   let eventService;
 
   beforeEach(async () => {
-    vi.resetModules();
-    eventService = await import('@services/eventService');
-    vi.useRealTimers();
+    eventService = await setupServiceBeforeEach('@services/eventService');
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    setupServiceAfterEach();
     vi.unstubAllGlobals?.();
   });
 

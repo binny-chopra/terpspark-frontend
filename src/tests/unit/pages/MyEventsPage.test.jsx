@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import MyEventsPage from '@pages/MyEventsPage';
+import '../setup/layoutMocks';
 
 const mockNavigate = vi.fn();
 const mockGetOrganizerEvents = vi.fn();
@@ -15,14 +16,7 @@ vi.mock('@context/AuthContext', () => ({
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
-}));
-
-vi.mock('@components/layout/Header', () => ({
-  default: () => <div data-testid="header" />,
-}));
-
-vi.mock('@components/layout/Navigation', () => ({
-  default: () => <div data-testid="navigation" />,
+  useLocation: () => ({ pathname: '/organizer/events' }),
 }));
 
 vi.mock('@components/common/LoadingSpinner', () => ({

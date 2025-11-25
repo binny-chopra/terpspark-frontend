@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   formatEventDate,
   formatEventTime,
@@ -14,18 +14,7 @@ import {
   getCategoryColor,
   truncateText
 } from '@utils/eventUtils';
-
-const restoreTimers = () => {
-  try {
-    vi.useRealTimers();
-  } catch {
-    // ignored when timers already real
-  }
-};
-
-afterEach(() => {
-  restoreTimers();
-});
+import { withSystemTime } from '../helpers/testUtils';
 
 describe('eventUtils', () => {
   describe('formatting helpers', () => {
@@ -63,16 +52,8 @@ describe('eventUtils', () => {
   });
 
   describe('date helpers', () => {
-    const fixedNow = new Date('2025-05-01T12:00:00');
-
-    const withFakeTime = (cb) => {
-      vi.useFakeTimers();
-      vi.setSystemTime(fixedNow);
-      return cb();
-    };
-
     it('should detect past events and today events accurately', () => {
-      withFakeTime(() => {
+      withSystemTime('2025-05-01T12:00:00', () => {
         expect(isEventPast('2025-04-30T12:00:00', '18:00')).toBe(true);
         expect(isEventPast('2025-05-02T12:00:00', '18:00')).toBe(false);
         expect(isEventToday('2025-05-01T08:00:00')).toBe(true);
@@ -81,7 +62,7 @@ describe('eventUtils', () => {
     });
 
     it('should compute days until event relative to today', () => {
-      withFakeTime(() => {
+      withSystemTime('2025-05-01T12:00:00', () => {
         expect(getDaysUntilEvent('2025-05-01T23:59:59')).toBe(1);
         expect(getDaysUntilEvent('2025-05-10T00:00:00')).toBe(9);
       });
@@ -96,22 +77,15 @@ describe('eventUtils', () => {
       endTime: '18:00'
     };
 
-    const runWithNow = (isoDate, assertion) => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date(isoDate));
-      assertion();
-      restoreTimers();
-    };
-
     it('should mark past events and today events correctly', () => {
-      runWithNow('2025-05-06T12:00:00', () => {
+      withSystemTime('2025-05-06T12:00:00', () => {
         expect(getEventStatusBadge(baseEvent)).toEqual({
           label: 'Past Event',
           color: 'bg-gray-100 text-gray-700'
         });
       });
 
-      runWithNow('2025-05-05T08:00:00', () => {
+      withSystemTime('2025-05-05T08:00:00', () => {
         expect(getEventStatusBadge(baseEvent)).toEqual({
           label: 'Today',
           color: 'bg-blue-100 text-blue-700'
@@ -120,7 +94,7 @@ describe('eventUtils', () => {
     });
 
     it('should mark full, low remaining, and available events', () => {
-      runWithNow('2025-05-01T12:00:00', () => {
+      withSystemTime('2025-05-01T12:00:00', () => {
         expect(getEventStatusBadge({ ...baseEvent, registeredCount: 100 })).toEqual({
           label: 'Full',
           color: 'bg-red-100 text-red-700'

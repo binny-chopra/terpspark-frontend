@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import AuditLogsPage from '@pages/AuditLogsPage';
+import '../setup/layoutMocks';
 
 const mockFetchAuditLogs = vi.fn();
 const mockExportAuditLogs = vi.fn();
@@ -9,12 +10,11 @@ vi.mock('@context/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'admin-1', name: 'Admin', role: 'admin' } }),
 }));
 
-vi.mock('@components/layout/Header', () => ({
-  default: () => <div data-testid="header" />,
-}));
+const mockNavigate = vi.fn();
 
-vi.mock('@components/layout/Navigation', () => ({
-  default: () => <div data-testid="navigation" />,
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
+  useLocation: () => ({ pathname: '/admin/audit-logs' }),
 }));
 
 vi.mock('@components/common/LoadingSpinner', () => ({
@@ -78,7 +78,8 @@ describe('AuditLogsPage', () => {
 
     await waitFor(() => expect(screen.getByTestId('audit-log-table')).toBeInTheDocument());
 
-    expect(screen.getByText('Audit Logs')).toBeInTheDocument();
+    // "Audit Logs" appears in both Navigation and page content, so use getAllByText
+    expect(screen.getAllByText('Audit Logs').length).toBeGreaterThan(0);
     expect(screen.getByText((content) => content.includes('log entries'))).toBeInTheDocument();
     expect(screen.getAllByText(/log/i).length).toBeGreaterThan(0);
 

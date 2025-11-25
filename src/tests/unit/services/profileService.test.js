@@ -1,21 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-
-const flushTimers = async () => {
-  await vi.runAllTimersAsync();
-};
+import { flushTimers, setupServiceBeforeEach, setupServiceAfterEach } from '../helpers/testUtils';
 
 describe('profileService', () => {
   let profileService;
 
   beforeEach(async () => {
-    vi.resetModules();
-    profileService = await import('@services/profileService');
-    vi.useRealTimers();
+    profileService = await setupServiceBeforeEach('@services/profileService');
     vi.restoreAllMocks();
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    setupServiceAfterEach();
   });
 
   it('fetches existing profiles and handles missing ones', async () => {

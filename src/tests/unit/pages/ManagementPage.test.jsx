@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ManagementPage from '@pages/ManagementPage';
+import '../setup/layoutMocks';
 
 const mockNavigate = vi.fn();
 const mockFetchCategories = vi.fn();
@@ -18,14 +19,7 @@ vi.mock('@context/AuthContext', () => ({
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
-}));
-
-vi.mock('@components/layout/Header', () => ({
-  default: () => <div data-testid="header" />,
-}));
-
-vi.mock('@components/layout/Navigation', () => ({
-  default: () => <div data-testid="navigation" />,
+  useLocation: () => ({ pathname: '/admin/management' }),
 }));
 
 vi.mock('@components/common/LoadingSpinner', () => ({
