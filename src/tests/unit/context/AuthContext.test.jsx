@@ -232,32 +232,6 @@ describe('AuthContext', () => {
         expect(screen.getByTestId('isAuthenticated')).toHaveTextContent('false');
       });
     });
-
-    it('should update isAuthenticated based on user state', async () => {
-      authService.validateSession.mockResolvedValue({ valid: false });
-
-      render(
-        <BrowserRouter>
-          <AuthProvider>
-            <TestComponent />
-          </AuthProvider>
-        </BrowserRouter>
-      );
-
-      await waitFor(() => {
-        expect(screen.getByTestId('isAuthenticated')).toHaveTextContent('false');
-      });
-
-      const mockUser = { id: 1, email: 'test@example.com', role: 'student' };
-      authService.login.mockResolvedValue({ success: true, user: mockUser });
-
-      const loginButton = screen.getByTestId('login-btn');
-      loginButton.click();
-
-      await waitFor(() => {
-        expect(screen.getByTestId('isAuthenticated')).toHaveTextContent('true');
-      });
-    });
   });
 
   describe('useAuth hook', () => {

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ProfilePage from '@pages/ProfilePage';
+import { getInputByLabel } from '../helpers/testUtils';
 
 const mockNavigate = vi.fn();
 const mockGetProfile = vi.fn();
@@ -52,11 +53,6 @@ const resolveProfile = () => {
   mockGetUserStats.mockResolvedValue({ success: true, data: statsFixture });
   mockUpdateProfile.mockResolvedValue({ success: true, data: profileFixture });
   mockUpdatePreferences.mockResolvedValue({ success: true });
-};
-
-const getInputByLabel = (labelText) => {
-  const label = screen.getByText(labelText);
-  return label.parentElement.querySelector('input, textarea');
 };
 
 describe('ProfilePage', () => {

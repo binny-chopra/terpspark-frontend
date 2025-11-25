@@ -45,12 +45,18 @@ describe('constants', () => {
     });
   });
 
-  it('should list audit actions and notification types', () => {
+  it('should define audit action constants', () => {
     expect(AUDIT_ACTIONS.USER_LOGIN).toBe('USER_LOGIN');
     expect(AUDIT_ACTIONS.EVENT_APPROVED).toBe('EVENT_APPROVED');
+    expect(AUDIT_ACTIONS).toHaveProperty('ORGANIZER_APPROVED');
+    expect(AUDIT_ACTIONS).toHaveProperty('EVENT_REJECTED');
+  });
 
+  it('should define notification type constants', () => {
     expect(NOTIFICATION_TYPES.EVENT_REMINDER).toBe('event_reminder');
     expect(NOTIFICATION_TYPES.SYSTEM).toBe('system');
+    expect(NOTIFICATION_TYPES).toHaveProperty('REGISTRATION_CONFIRMED');
+    expect(NOTIFICATION_TYPES).toHaveProperty('EVENT_CANCELLED');
   });
 
   it('should expose check-in methods and event/registration status values', () => {

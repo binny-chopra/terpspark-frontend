@@ -1,20 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-
-const flushTimers = async () => {
-  await vi.runAllTimersAsync();
-};
+import { flushTimers, setupServiceBeforeEach, setupServiceAfterEach } from '../helpers/testUtils';
 
 describe('checkInService', () => {
   let checkInService;
 
   beforeEach(async () => {
-    vi.resetModules();
-    checkInService = await import('@services/checkInService');
-    vi.useRealTimers();
+    checkInService = await setupServiceBeforeEach('@services/checkInService');
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    setupServiceAfterEach();
   });
 
   it('validates QR codes successfully', async () => {

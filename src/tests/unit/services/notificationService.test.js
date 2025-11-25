@@ -1,20 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-
-const flushTimers = async () => {
-  await vi.runAllTimersAsync();
-};
+import { flushTimers, setupServiceBeforeEach, setupServiceAfterEach } from '../helpers/testUtils';
 
 describe('notificationService', () => {
   let notificationService;
 
   beforeEach(async () => {
-    vi.resetModules();
-    notificationService = await import('@services/notificationService');
-    vi.useRealTimers();
+    notificationService = await setupServiceBeforeEach('@services/notificationService');
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    setupServiceAfterEach();
   });
 
   it('fetches notifications with filters and unread counts', async () => {

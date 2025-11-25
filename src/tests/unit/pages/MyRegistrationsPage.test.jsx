@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import MyRegistrationsPage from '@pages/MyRegistrationsPage';
+import '../setup/layoutMocks';
 
 const mockUser = { id: 'user-1', name: 'Student One' };
 const mockGetUserRegistrations = vi.fn();
@@ -12,12 +13,11 @@ vi.mock('@context/AuthContext', () => ({
   useAuth: () => ({ user: mockUser }),
 }));
 
-vi.mock('@components/layout/Header', () => ({
-  default: () => <div data-testid="header" />,
-}));
+const mockNavigate = vi.fn();
 
-vi.mock('@components/layout/Navigation', () => ({
-  default: () => <div data-testid="navigation" />,
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
+  useLocation: () => ({ pathname: '/my-registrations' }),
 }));
 
 vi.mock('@components/common/LoadingSpinner', () => ({

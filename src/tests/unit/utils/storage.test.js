@@ -20,16 +20,6 @@ describe('storage utils', () => {
     expect(getStorageItem('test')).toEqual(value);
   });
 
-  it('should return null for missing keys and handle parse errors gracefully', () => {
-    expect(getStorageItem('missing')).toBeNull();
-
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    localStorage.setItem('bad', '{invalid json');
-    expect(getStorageItem('bad')).toBeNull();
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Error getting storage item bad:'), expect.any(SyntaxError));
-    consoleSpy.mockRestore();
-  });
-
   it('should remove individual keys and report existence', () => {
     setStorageItem('key', 'value');
     expect(hasStorageItem('key')).toBe(true);
@@ -44,17 +34,29 @@ describe('storage utils', () => {
     expect(localStorage.length).toBe(0);
   });
 
-  it('should swallow errors when localStorage operations throw', () => {
-    const setSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new Error('fail');
+  describe('error handling', () => {
+    it('should return null for missing keys and handle parse errors gracefully', () => {
+      expect(getStorageItem('missing')).toBeNull();
+
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      localStorage.setItem('bad', '{invalid json');
+      expect(getStorageItem('bad')).toBeNull();
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Error getting storage item bad:'), expect.any(SyntaxError));
+      consoleSpy.mockRestore();
     });
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    expect(() => setStorageItem('key', 'value')).not.toThrow();
-    expect(consoleSpy).toHaveBeenCalledWith('Error setting storage item key:', expect.any(Error));
+    it('should swallow errors when localStorage operations throw', () => {
+      const setSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new Error('fail');
+      });
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    setSpy.mockRestore();
-    consoleSpy.mockRestore();
+      expect(() => setStorageItem('key', 'value')).not.toThrow();
+      expect(consoleSpy).toHaveBeenCalledWith('Error setting storage item key:', expect.any(Error));
+
+      setSpy.mockRestore();
+      consoleSpy.mockRestore();
+    });
   });
 });
 

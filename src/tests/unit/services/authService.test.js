@@ -1,22 +1,17 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-
-const flushTimers = async () => {
-  await vi.runAllTimersAsync();
-};
+import { flushTimers, setupServiceBeforeEach, setupServiceAfterEach } from '../helpers/testUtils';
 
 describe('authService', () => {
   let authService;
 
   beforeEach(async () => {
-    vi.resetModules();
-    authService = await import('@services/authService');
+    authService = await setupServiceBeforeEach('@services/authService');
     localStorage.clear();
     vi.restoreAllMocks();
-    vi.useRealTimers();
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    setupServiceAfterEach();
   });
 
   it('logs in a valid user and stores session state', async () => {

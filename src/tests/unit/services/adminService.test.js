@@ -1,8 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-
-const flushTimers = async () => {
-  await vi.runAllTimersAsync();
-};
+import { flushTimers, setupServiceBeforeEach, setupServiceAfterEach } from '../helpers/testUtils';
 
 const ADMIN_USER = { id: 999, name: 'Test Admin', role: 'admin' };
 
@@ -10,15 +7,13 @@ describe('adminService', () => {
   let adminService;
 
   beforeEach(async () => {
-    vi.resetModules();
-    adminService = await import('@services/adminService');
+    adminService = await setupServiceBeforeEach('@services/adminService');
     localStorage.clear();
-    vi.useRealTimers();
   });
 
   afterEach(() => {
     localStorage.clear();
-    vi.useRealTimers();
+    setupServiceAfterEach();
   });
 
   it('fetches pending organizers and events', async () => {

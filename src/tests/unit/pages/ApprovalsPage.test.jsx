@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import ApprovalsPage from '@pages/ApprovalsPage';
+import '../setup/layoutMocks';
 
 const mockFetchPendingOrganizers = vi.fn();
 const mockFetchPendingEvents = vi.fn();
@@ -13,12 +14,11 @@ vi.mock('@context/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'admin-42', name: 'Admin', role: 'admin' } }),
 }));
 
-vi.mock('@components/layout/Header', () => ({
-  default: () => <div data-testid="header" />,
-}));
+const mockNavigate = vi.fn();
 
-vi.mock('@components/layout/Navigation', () => ({
-  default: () => <div data-testid="navigation" />,
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
+  useLocation: () => ({ pathname: '/admin/approvals' }),
 }));
 
 vi.mock('@components/common/LoadingSpinner', () => ({
@@ -79,7 +79,8 @@ describe('ApprovalsPage', () => {
 
     render(<ApprovalsPage />);
 
-    await waitFor(() => expect(screen.getByText('Approvals')).toBeInTheDocument());
+    // "Approvals" appears in both Navigation and page content, so use getAllByText
+    await waitFor(() => expect(screen.getAllByText('Approvals').length).toBeGreaterThan(0));
 
     expect(screen.getByText('Pending Organizers')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();

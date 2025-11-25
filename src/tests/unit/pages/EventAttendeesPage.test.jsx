@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import EventAttendeesPage from '@pages/EventAttendeesPage';
+import '../setup/layoutMocks';
 
 const mockUseParams = vi.fn();
 const mockNavigate = vi.fn();
@@ -13,18 +14,11 @@ const mockSendAnnouncement = vi.fn();
 vi.mock('react-router-dom', () => ({
   useParams: () => mockUseParams(),
   useNavigate: () => mockNavigate,
+  useLocation: () => ({ pathname: '/organizer/events/42/attendees' }),
 }));
 
 vi.mock('@context/AuthContext', () => ({
   useAuth: () => mockUseAuth(),
-}));
-
-vi.mock('@components/layout/Header', () => ({
-  default: () => <div data-testid="header" />,
-}));
-
-vi.mock('@components/layout/Navigation', () => ({
-  default: () => <div data-testid="navigation" />,
 }));
 
 vi.mock('@components/common/LoadingSpinner', () => ({

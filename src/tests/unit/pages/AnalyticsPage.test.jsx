@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import AnalyticsPage from '@pages/AnalyticsPage';
+import '../setup/layoutMocks';
 
 const mockNavigate = vi.fn();
 const mockFetchAnalytics = vi.fn();
@@ -8,18 +9,11 @@ const mockExportAnalytics = vi.fn();
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
+  useLocation: () => ({ pathname: '/admin/analytics' }),
 }));
 
 vi.mock('@context/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'admin-1', role: 'admin', name: 'Admin' } }),
-}));
-
-vi.mock('@components/layout/Header', () => ({
-  default: () => <div data-testid="header" />,
-}));
-
-vi.mock('@components/layout/Navigation', () => ({
-  default: () => <div data-testid="navigation" />,
 }));
 
 vi.mock('@components/admin/AnalyticsChart', () => ({
