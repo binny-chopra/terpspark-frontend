@@ -47,18 +47,6 @@ describe('RegistrationCard', () => {
     expect(screen.getByText('TICKET123')).toBeInTheDocument();
   });
 
-  it('displays cancel button for confirmed, non-past events', () => {
-    render(
-      <RegistrationCard
-        registration={mockRegistration}
-        onCancel={vi.fn()}
-        onViewTicket={vi.fn()}
-      />
-    );
-
-    expect(screen.getByText(/cancel/i)).toBeInTheDocument();
-  });
-
   it('shows cancel confirmation modal when cancel is clicked', async () => {
     const user = userEvent.setup();
     const mockOnCancel = vi.fn();

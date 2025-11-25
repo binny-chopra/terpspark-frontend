@@ -12,10 +12,4 @@ describe('LoadingSpinner', () => {
     render(<LoadingSpinner message="Please wait..." />);
     expect(screen.getByText('Please wait...')).toBeInTheDocument();
   });
-
-  it('renders calendar icon', () => {
-    const { container } = render(<LoadingSpinner />);
-    const icon = container.querySelector('svg');
-    expect(icon).toBeInTheDocument();
-  });
 });

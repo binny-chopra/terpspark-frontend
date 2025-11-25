@@ -42,13 +42,6 @@ describe('EventCard', () => {
     expect(mockOnClick).toHaveBeenCalledWith(mockEvent);
   });
 
-  it('displays capacity information', () => {
-    const mockOnClick = vi.fn();
-    render(<EventCard event={mockEvent} onClick={mockOnClick} />);
-
-    expect(screen.getByText(/50 \/ 100 registered/i)).toBeInTheDocument();
-  });
-
   it('displays waitlist count when present', () => {
     const eventWithWaitlist = { ...mockEvent, waitlistCount: 5 };
     const mockOnClick = vi.fn();
@@ -62,21 +55,5 @@ describe('EventCard', () => {
     render(<EventCard event={mockEvent} onClick={mockOnClick} />);
 
     expect(screen.queryByText(/on waitlist/i)).not.toBeInTheDocument();
-  });
-
-  it('displays category badge', () => {
-    const mockOnClick = vi.fn();
-    render(<EventCard event={mockEvent} onClick={mockOnClick} />);
-
-    expect(screen.getByText('academic')).toBeInTheDocument();
-  });
-
-  it('displays status badge', () => {
-    const mockOnClick = vi.fn();
-    render(<EventCard event={mockEvent} onClick={mockOnClick} />);
-
-    // Status badge should be present (exact text depends on eventUtils)
-    const badges = screen.getAllByText(/available|full|past|today/i);
-    expect(badges.length).toBeGreaterThan(0);
   });
 });

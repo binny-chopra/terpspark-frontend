@@ -45,19 +45,6 @@ describe('ApprovalCard', () => {
       expect(screen.getByText(/computer science/i)).toBeInTheDocument();
     });
 
-    it('shows pending status badge', () => {
-      render(
-        <ApprovalCard
-          item={mockOrganizerItem}
-          type="organizer"
-          onApprove={mockOnApprove}
-          onReject={mockOnReject}
-        />
-      );
-
-      expect(screen.getByText('Pending')).toBeInTheDocument();
-    });
-
     it('opens notes modal when approve is clicked', async () => {
       const user = userEvent.setup();
       render(

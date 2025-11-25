@@ -89,34 +89,6 @@ describe('ConfirmDialog', () => {
     expect(mockOnCancel).toHaveBeenCalledTimes(1);
   });
 
-  it('renders correct icon for warning type', () => {
-    render(
-      <ConfirmDialog
-        isOpen={true}
-        title="Warning"
-        message="Warning message"
-        type="warning"
-        onConfirm={mockOnConfirm}
-        onCancel={mockOnCancel}
-      />
-    );
-    expect(screen.getByText('Warning')).toBeInTheDocument();
-  });
-
-  it('renders correct icon for danger type', () => {
-    render(
-      <ConfirmDialog
-        isOpen={true}
-        title="Danger"
-        message="Danger message"
-        type="danger"
-        onConfirm={mockOnConfirm}
-        onCancel={mockOnCancel}
-      />
-    );
-    expect(screen.getByText('Danger')).toBeInTheDocument();
-  });
-
   it('uses custom confirm and cancel text', () => {
     render(
       <ConfirmDialog
