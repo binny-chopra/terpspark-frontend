@@ -14,6 +14,10 @@ const Navigation = () => {
       { id: 'home', label: 'Home', icon: Home, path: ROUTES.DASHBOARD }
     ];
 
+    if (!user) {
+      return baseItems;
+    }
+
     const roleSpecificItems = {
       [USER_ROLES.STUDENT]: [
         { id: 'events', label: 'Browse Events', icon: Calendar, path: ROUTES.EVENTS },
