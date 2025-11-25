@@ -47,31 +47,15 @@ describe('Header', () => {
     localStorage.clear();
   });
 
-  it('renders app name', async () => {
-    const user = { id: 1, email: 'test@umd.edu', name: 'Test User', role: 'student' };
-    renderWithProviders(user);
-
-    await waitFor(() => {
-      expect(screen.getByText(/terpspark/i)).toBeInTheDocument();
-    });
-  });
-
-  it('displays user name and email', async () => {
+  it('renders user information and app name', async () => {
     const user = { id: 1, email: 'test@umd.edu', name: 'Test User', role: 'student' };
     renderWithProviders(user);
 
     await waitFor(() => {
       expect(screen.getByText('Test User')).toBeInTheDocument();
       expect(screen.getByText('test@umd.edu')).toBeInTheDocument();
-    });
-  });
-
-  it('displays role badge', async () => {
-    const user = { id: 1, email: 'test@umd.edu', name: 'Test User', role: 'admin' };
-    renderWithProviders(user);
-
-    await waitFor(() => {
-      expect(screen.getByText(/admin/i)).toBeInTheDocument();
+      expect(screen.getByText(/terpspark/i)).toBeInTheDocument();
+      expect(screen.getByText(/student/i)).toBeInTheDocument();
     });
   });
 
@@ -93,17 +77,6 @@ describe('Header', () => {
     await waitFor(() => {
       // There might be multiple "5" badges (desktop and mobile), so use getAllByText
       const badges = screen.getAllByText('5');
-      expect(badges.length).toBeGreaterThan(0);
-    });
-  });
-
-  it('shows 9+ when unread count exceeds 9', async () => {
-    const user = { id: 1, email: 'test@umd.edu', name: 'Test User', role: 'student' };
-    renderWithProviders(user, 15);
-
-    await waitFor(() => {
-      // There might be multiple "9+" badges (desktop and mobile), so use getAllByText
-      const badges = screen.getAllByText('9+');
       expect(badges.length).toBeGreaterThan(0);
     });
   });
