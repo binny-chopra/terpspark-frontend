@@ -3,7 +3,7 @@ import { setStorageItem, getStorageItem, removeStorageItem } from '@utils/storag
 
 const AUTH_TOKEN_KEY = 'terpspark_auth_token';
 const USER_KEY = 'terpspark_user';
-
+const BACKEND_URL = 'http://127.0.0.1:8000';
 /**
  * Simulates SSO authentication
  * In production, this would call the backend API
@@ -11,13 +11,18 @@ const USER_KEY = 'terpspark_user';
 export const login = async (email, password) => {
   try {
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // await new Promise(resolve => setTimeout(resolve, 500));
+    const res = await fetch(BACKEND_URL + '/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    // console.log(data);
 
-    const user = mockUsers.users.find(
-      u => u.email === email && u.password === password
-    );
-
-    if (!user) {
+    if (!data.success) {
       return {
         success: false,
         error: 'Invalid credentials. Please check your email and password.'
@@ -25,26 +30,26 @@ export const login = async (email, password) => {
     }
 
     // Check if organizer is approved
-    if (user.role === 'organizer' && !user.isApproved) {
+    if (data.user.role === 'organizer' && !data.user.isApproved) {
       return {
         success: false,
         error: 'Your organizer account is pending approval. Please contact an administrator.'
       };
     }
 
-    // Remove password from user object
-    const { password: _, ...userWithoutPassword } = user;
+    // // Remove password from user object
+    // const { password: _, ...userWithoutPassword } = user;
 
-    // Generate mock token
-    const token = btoa(JSON.stringify({ userId: user.id, timestamp: Date.now() }));
+  //   // Generate mock token
+    const token = data.token;
 
-    // Store auth data
+  //   // Store auth data
     setStorageItem(AUTH_TOKEN_KEY, token);
-    setStorageItem(USER_KEY, userWithoutPassword);
+  //   setStorageItem(USER_KEY, userWithoutPassword);
 
     return {
       success: true,
-      user: userWithoutPassword,
+      user: data.user,
       token
     };
   } catch (error) {

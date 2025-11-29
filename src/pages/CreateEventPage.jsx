@@ -7,17 +7,21 @@ import Navigation from '@components/layout/Navigation';
 import { getCategories } from '@services/eventService';
 import { createEvent } from '@services/organizerService';
 
+const BACKEND_URL = 'http://127.0.0.1:8000';
+
 const CreateEventPage = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [categories, setCategories] = useState([]);
+    const [venues, setVenues] = useState([]);
+    const [selectedVenue, setSelectedVenue] = useState(null);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
 
     const [formData, setFormData] = useState({
         title: '',
         description: '',
-        category: '',
+        categoryId: '',
         date: '',
         startTime: '',
         endTime: '',
@@ -30,6 +34,7 @@ const CreateEventPage = () => {
 
     useEffect(() => {
         loadCategories();
+        loadVenues();
     }, []);
 
     const loadCategories = async () => {
@@ -39,11 +44,46 @@ const CreateEventPage = () => {
         }
     };
 
+    const loadVenues = async () => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/venues`);
+            const data = await response.json();
+            if (data.success) {
+                setVenues(data.venues || []);
+            }
+        } catch (error) {
+            console.error('Failed to load venues:', error);
+        }
+    };
+
     const handleChange = (field, value) => {
         setFormData({ ...formData, [field]: value });
         // Clear error for this field
         if (errors[field]) {
             setErrors({ ...errors, [field]: '' });
+        }
+    };
+
+    const handleVenueChange = (venueId) => {
+        const venue = venues.find(v => v.id === venueId);
+        if (venue) {
+            setSelectedVenue(venue);
+            setFormData({
+                ...formData,
+                venue: venue.name,
+                location: venue.building
+            });
+            // Clear venue and location errors
+            if (errors.venue || errors.location) {
+                setErrors({ ...errors, venue: '', location: '' });
+            }
+        } else {
+            setSelectedVenue(null);
+            setFormData({
+                ...formData,
+                venue: '',
+                location: ''
+            });
         }
     };
 
@@ -60,8 +100,8 @@ const CreateEventPage = () => {
             newErrors.description = 'Description must be at least 50 characters';
         }
 
-        if (!formData.category) {
-            newErrors.category = 'Please select a category';
+        if (!formData.categoryId) {
+            newErrors.categoryId = 'Please select a category';
         }
 
         if (!formData.date) {
@@ -103,6 +143,8 @@ const CreateEventPage = () => {
             newErrors.capacity = 'Capacity must be at least 1';
         } else if (parseInt(formData.capacity) > 5000) {
             newErrors.capacity = 'Capacity cannot exceed 5000';
+        } else if (selectedVenue && parseInt(formData.capacity) > selectedVenue.capacity) {
+            newErrors.capacity = `Capacity cannot exceed venue capacity of ${selectedVenue.capacity}`;
         }
 
         setErrors(newErrors);
@@ -205,19 +247,19 @@ const CreateEventPage = () => {
                                 Category *
                             </label>
                             <select
-                                value={formData.category}
-                                onChange={(e) => handleChange('category', e.target.value)}
+                                value={formData.categoryId}
+                                onChange={(e) => handleChange('categoryId', e.target.value)}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
                             >
                                 <option value="">Select a category</option>
                                 {categories.map(cat => (
-                                    <option key={cat.id} value={cat.slug}>
+                                    <option key={cat.id} value={cat.id}>
                                         {cat.name}
                                     </option>
                                 ))}
                             </select>
-                            {errors.category && (
-                                <p className="text-sm text-red-600 mt-1">{errors.category}</p>
+                            {errors.categoryId && (
+                                <p className="text-sm text-red-600 mt-1">{errors.categoryId}</p>
                             )}
                         </div>
 
@@ -272,42 +314,44 @@ const CreateEventPage = () => {
                             </div>
                         </div>
 
-                        {/* Venue and Location */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Venue Name *
-                                </label>
-                                <div className="relative">
-                                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                    <input
-                                        type="text"
-                                        value={formData.venue}
-                                        onChange={(e) => handleChange('venue', e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
-                                        placeholder="e.g., Stamp Student Union - Grand Ballroom"
-                                    />
+                        {/* Venue Selection */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Venue *
+                            </label>
+                            <div className="relative">
+                                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                                <select
+                                    value={selectedVenue?.id || ''}
+                                    onChange={(e) => handleVenueChange(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none appearance-none"
+                                >
+                                    <option value="">Select a venue</option>
+                                    {venues.filter(v => v.isActive).map(venue => (
+                                        <option key={venue.id} value={venue.id}>
+                                            {venue.name} - {venue.building} (Capacity: {venue.capacity})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            {errors.venue && (
+                                <p className="text-sm text-red-600 mt-1">{errors.venue}</p>
+                            )}
+                            {selectedVenue && (
+                                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <p className="text-sm text-blue-800">
+                                        <strong>Selected Venue:</strong> {selectedVenue.name} - {selectedVenue.building}
+                                    </p>
+                                    <p className="text-sm text-blue-700 mt-1">
+                                        <strong>Max Capacity:</strong> {selectedVenue.capacity} attendees
+                                    </p>
+                                    {selectedVenue.facilities && selectedVenue.facilities.length > 0 && (
+                                        <p className="text-sm text-blue-700 mt-1">
+                                            <strong>Facilities:</strong> {selectedVenue.facilities.join(', ')}
+                                        </p>
+                                    )}
                                 </div>
-                                {errors.venue && (
-                                    <p className="text-sm text-red-600 mt-1">{errors.venue}</p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Building/Location *
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.location}
-                                    onChange={(e) => handleChange('location', e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
-                                    placeholder="e.g., Stamp Student Union"
-                                />
-                                {errors.location && (
-                                    <p className="text-sm text-red-600 mt-1">{errors.location}</p>
-                                )}
-                            </div>
+                            )}
                         </div>
 
                         {/* Capacity */}
@@ -331,7 +375,9 @@ const CreateEventPage = () => {
                                 <p className="text-sm text-red-600 mt-1">{errors.capacity}</p>
                             )}
                             <p className="text-sm text-gray-500 mt-1">
-                                Maximum capacity: 5000 attendees
+                                {selectedVenue 
+                                    ? `Venue capacity: ${selectedVenue.capacity} | System maximum: 5000 attendees`
+                                    : 'System maximum: 5000 attendees'}
                             </p>
                         </div>
 

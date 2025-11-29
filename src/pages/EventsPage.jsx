@@ -9,7 +9,7 @@ import EventDetailModal from '@components/events/EventDetailModal';
 import RegistrationModal from '@components/registration/RegistrationModal';
 import LoadingSpinner from '@components/common/LoadingSpinner';
 import { getAllEvents } from '@services/eventService';
-import { registerForEvent, checkRegistrationStatus } from '@services/registrationService';
+import { registerForEvent, checkRegistrationStatus, addToWaitlist } from '@services/registrationService';
 import { isEventFull } from '@utils/eventUtils';
 
 const EventsPage = () => {
@@ -117,7 +117,10 @@ const EventsPage = () => {
     };
 
     const handleRegistrationSubmit = async (formData) => {
-        const result = await registerForEvent(user.id, registrationEvent.id, formData);
+        // Call the appropriate function based on whether this is waitlist or regular registration
+        const result = isWaitlistRegistration
+            ? await addToWaitlist(user.id, registrationEvent.id, formData)
+            : await registerForEvent(user.id, registrationEvent.id, formData);
 
         if (result.success) {
             alert(result.message);

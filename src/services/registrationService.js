@@ -1,10 +1,11 @@
 import mockRegistrations from '@data/mockRegistrations.json';
 import mockEvents from '@data/mockEvents.json';
 import { getStorageItem, setStorageItem } from '@utils/storage';
+import { getAuthToken } from './authService';
 
 const REGISTRATIONS_KEY = 'terpspark_registrations';
 const WAITLIST_KEY = 'terpspark_waitlist';
-
+const BACKEND_URL = 'http://127.0.0.1:8000';
 /**
  * Get all registrations from storage or mock data
  */
@@ -40,14 +41,22 @@ const saveWaitlistToStorage = (waitlist) => {
  */
 export const getUserRegistrations = async (userId) => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        const registrations = getRegistrationsFromStorage();
-        const userRegistrations = registrations.filter(r => r.userId === userId);
+        // await new Promise(resolve => setTimeout(resolve, 300));
+        const res = await fetch(BACKEND_URL + '/api/registrations', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`
+            }
+        });
+        const data = await res.json();
+        // console.log(data);
+        // const registrations = getRegistrationsFromStorage();
+        const userRegistrations = data.registrations;
 
         // Enrich with event details
         const enrichedRegistrations = userRegistrations.map(reg => {
-            const event = mockEvents.events.find(e => e.id === reg.eventId);
+            const event = reg.event
             return {
                 ...reg,
                 event
@@ -68,31 +77,39 @@ export const getUserRegistrations = async (userId) => {
 
 /**
  * Get user's waitlist entries
+ * GET /api/waitlist
+ * Returns the current user's waitlist entries (filtered by JWT token)
+ * Backend includes event details for each entry
  */
 export const getUserWaitlist = async (userId) => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 200));
-
-        const waitlist = getWaitlistFromStorage();
-        const userWaitlist = waitlist.filter(w => w.userId === userId);
-
-        // Enrich with event details
-        const enrichedWaitlist = userWaitlist.map(wait => {
-            const event = mockEvents.events.find(e => e.id === wait.eventId);
-            return {
-                ...wait,
-                event
-            };
+        const response = await fetch(`${BACKEND_URL}/api/waitlist`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`
+            }
         });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                error: data.detail || data.error || 'Failed to fetch waitlist'
+            };
+        }
 
         return {
             success: true,
-            waitlist: enrichedWaitlist
+            waitlist: data.waitlist || []
         };
+
     } catch (error) {
+        console.error('Get waitlist error:', error);
         return {
             success: false,
-            error: 'Failed to fetch waitlist'
+            error: 'Failed to fetch waitlist. Please try again.'
         };
     }
 };
@@ -102,10 +119,18 @@ export const getUserWaitlist = async (userId) => {
  */
 export const checkRegistrationStatus = async (userId, eventId) => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // await new Promise(resolve => setTimeout(resolve, 100));
+        const res = await fetch(BACKEND_URL + '/api/registrations', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`
+            }
+        });
+        const data = await res.json();
 
-        const registrations = getRegistrationsFromStorage();
-        const registration = registrations.find(
+        // const registrations = getRegistrationsFromStorage();
+        const registration = data.registrations.find(
             r => r.userId === userId && r.eventId === eventId && r.status === 'confirmed'
         );
 
@@ -131,206 +156,139 @@ export const checkRegistrationStatus = async (userId, eventId) => {
 
 /**
  * Register for an event
+ * POST /api/registrations
+ * The backend handles all business logic including:
+ * - Capacity checks and waitlist management
+ * - Duplicate registration prevention
+ * - Guest count validation
+ * - Registration creation and ticket generation
  */
 export const registerForEvent = async (userId, eventId, registrationData = {}) => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        const event = mockEvents.events.find(e => e.id === eventId);
-        if (!event) {
-            return {
-                success: false,
-                error: 'Event not found'
-            };
-        }
-
-        // Check if already registered
-        const statusCheck = await checkRegistrationStatus(userId, eventId);
-        if (statusCheck.isRegistered) {
-            return {
-                success: false,
-                error: 'You are already registered for this event'
-            };
-        }
-
-        const registrations = getRegistrationsFromStorage();
-
-        // CRITICAL FIX: Use the event's registeredCount from mock data
-        // This represents the current actual capacity from the database
-        const currentCapacity = event.registeredCount;
-
-        // Calculate total attendees including guests
-        const totalNewAttendees = 1 + (registrationData.guests?.length || 0);
-
-        // Check if event is full using the event's registeredCount
-        const isEventFull = currentCapacity >= event.capacity;
-
-        console.log('=== CAPACITY CHECK ===', {
-            eventTitle: event.title,
-            eventId,
-            eventCapacity: event.capacity,
-            currentRegisteredCount: currentCapacity,
-            totalNewAttendees,
-            isEventFull,
-            willAddToWaitlist: isEventFull
+        const response = await fetch(`${BACKEND_URL}/api/registrations`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`
+            },
+            body: JSON.stringify({
+                eventId,
+                guests: registrationData.guests || [],
+                sessions: registrationData.sessions || []
+            })
         });
 
-        if (isEventFull) {
-            console.log('🔴 EVENT IS FULL - Adding to waitlist');
-            // Add to waitlist instead
-            return await addToWaitlist(userId, eventId, registrationData);
-        }
+        const data = await response.json();
 
-        console.log('🟢 EVENT HAS SPACE - Proceeding with registration');
-
-        // Check if there's enough capacity for user + guests
-        const remainingCapacity = event.capacity - currentCapacity;
-        if (totalNewAttendees > remainingCapacity) {
+        if (!response.ok) {
             return {
                 success: false,
-                error: `Only ${remainingCapacity} spot(s) remaining. Please reduce number of guests or join the waitlist.`
+                error: data.detail || data.error || 'Failed to register for event'
             };
         }
-
-        // Create new registration
-        const newRegistration = {
-            id: Date.now(),
-            userId,
-            eventId,
-            status: 'confirmed',
-            registeredAt: new Date().toISOString(),
-            checkInStatus: 'not_checked_in',
-            ticketCode: `TKT-${Date.now()}-${eventId}`,
-            guests: registrationData.guests || [],
-            sessions: registrationData.sessions || [],
-            qrCode: generateQRCode(`TKT-${Date.now()}-${eventId}`),
-            reminderSent: false,
-            cancelledAt: null
-        };
-
-        registrations.push(newRegistration);
-        saveRegistrationsToStorage(registrations);
-
-        // Update event capacity in mockEvents (for current session only)
-        event.registeredCount = currentCapacity + totalNewAttendees;
-
-        console.log('✅ Registration successful, new capacity:', event.registeredCount);
 
         return {
             success: true,
-            message: 'Successfully registered for event',
-            registration: newRegistration
+            message: data.message || 'Successfully registered for event',
+            registration: data.registration,
+            addedToWaitlist: data.addedToWaitlist || false
         };
+
     } catch (error) {
         console.error('Registration error:', error);
         return {
             success: false,
-            error: 'Failed to register for event'
+            error: 'Failed to register for event. Please try again.'
         };
     }
 };
 
 /**
  * Add user to waitlist
+ * POST /api/waitlist
+ * The backend handles:
+ * - Checking for duplicate waitlist entries
+ * - Calculating waitlist position
+ * - Updating event waitlist count
+ * - Creating waitlist entry
  */
-export const addToWaitlist = async (userId, eventId, data = {}) => {
+export const addToWaitlist = async (userId, eventId, preferences = {}) => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 400));
+        const response = await fetch(`${BACKEND_URL}/api/waitlist`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`
+            },
+            body: JSON.stringify({
+                eventId: eventId,
+                notificationPreference: preferences.notificationPreference || 'email'
+            })
+        });
 
-        const waitlist = getWaitlistFromStorage();
+        const data = await response.json();
 
-        // Check if already on waitlist
-        const existingEntry = waitlist.find(w => w.userId === userId && w.eventId === eventId);
-        if (existingEntry) {
+        if (!response.ok) {
             return {
                 success: false,
-                error: 'You are already on the waitlist for this event'
+                error: data.detail || data.error || 'Failed to add to waitlist'
             };
-        }
-
-        // Find position in waitlist
-        const eventWaitlist = waitlist.filter(w => w.eventId === eventId);
-        const position = eventWaitlist.length + 1;
-
-        const newWaitlistEntry = {
-            id: Date.now(),
-            userId,
-            eventId,
-            position,
-            joinedAt: new Date().toISOString(),
-            notificationPreference: data.notificationPreference || 'email'
-        };
-
-        waitlist.push(newWaitlistEntry);
-        saveWaitlistToStorage(waitlist);
-
-        // Update event waitlist count
-        const event = mockEvents.events.find(e => e.id === eventId);
-        if (event) {
-            event.waitlistCount++;
         }
 
         return {
             success: true,
-            message: `Added to waitlist at position ${position}`,
-            waitlistEntry: newWaitlistEntry
+            message: data.message || 'Added to waitlist successfully',
+            waitlistEntry: data.waitlistEntry,
+            position: data.position
         };
+
     } catch (error) {
+        console.error('Waitlist error:', error);
         return {
             success: false,
-            error: 'Failed to add to waitlist'
+            error: 'Failed to add to waitlist. Please try again.'
         };
     }
 };
 
 /**
  * Cancel registration
+ * DELETE /api/registrations/{registrationId}
+ * The backend handles:
+ * - Validating registration ownership
+ * - Preventing duplicate cancellations
+ * - Updating event capacity
+ * - Promoting users from waitlist automatically
  */
 export const cancelRegistration = async (userId, registrationId) => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 400));
+        const response = await fetch(`${BACKEND_URL}/api/registrations/${registrationId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`
+            }
+        });
 
-        const registrations = getRegistrationsFromStorage();
-        const registration = registrations.find(r => r.id === registrationId && r.userId === userId);
+        const data = await response.json();
 
-        if (!registration) {
+        if (!response.ok) {
             return {
                 success: false,
-                error: 'Registration not found'
+                error: data.detail || data.error || 'Failed to cancel registration'
             };
         }
-
-        if (registration.status === 'cancelled') {
-            return {
-                success: false,
-                error: 'Registration is already cancelled'
-            };
-        }
-
-        // Mark as cancelled
-        registration.status = 'cancelled';
-        registration.cancelledAt = new Date().toISOString();
-
-        saveRegistrationsToStorage(registrations);
-
-        // Update event capacity
-        const event = mockEvents.events.find(e => e.id === registration.eventId);
-        if (event && event.registeredCount > 0) {
-            const guestCount = registration.guests?.length || 0;
-            event.registeredCount -= (1 + guestCount);
-        }
-
-        // Promote from waitlist if available
-        await promoteFromWaitlist(registration.eventId);
 
         return {
             success: true,
-            message: 'Registration cancelled successfully'
+            message: data.message || 'Registration cancelled successfully'
         };
+
     } catch (error) {
+        console.error('Cancel registration error:', error);
         return {
             success: false,
-            error: 'Failed to cancel registration'
+            error: 'Failed to cancel registration. Please try again.'
         };
     }
 };
@@ -338,44 +296,44 @@ export const cancelRegistration = async (userId, registrationId) => {
 /**
  * Leave waitlist
  */
+/**
+ * Leave/remove from waitlist
+ * DELETE /api/waitlist/{waitlistId}
+ * The backend handles:
+ * - Validating waitlist entry ownership
+ * - Removing from waitlist
+ * - Updating positions for remaining users
+ * - Updating event waitlist count
+ */
 export const leaveWaitlist = async (userId, waitlistId) => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 300));
+        const response = await fetch(`${BACKEND_URL}/api/waitlist/${waitlistId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`
+            }
+        });
 
-        const waitlist = getWaitlistFromStorage();
-        const entryIndex = waitlist.findIndex(w => w.id === waitlistId && w.userId === userId);
+        const data = await response.json();
 
-        if (entryIndex === -1) {
+        if (!response.ok) {
             return {
                 success: false,
-                error: 'Waitlist entry not found'
+                error: data.detail || data.error || 'Failed to leave waitlist'
             };
-        }
-
-        const entry = waitlist[entryIndex];
-        waitlist.splice(entryIndex, 1);
-
-        // Update positions for remaining waitlist entries
-        waitlist
-            .filter(w => w.eventId === entry.eventId && w.position > entry.position)
-            .forEach(w => w.position--);
-
-        saveWaitlistToStorage(waitlist);
-
-        // Update event waitlist count
-        const event = mockEvents.events.find(e => e.id === entry.eventId);
-        if (event && event.waitlistCount > 0) {
-            event.waitlistCount--;
         }
 
         return {
             success: true,
-            message: 'Removed from waitlist successfully'
+            message: data.message || 'Removed from waitlist successfully'
         };
+
     } catch (error) {
+        console.error('Leave waitlist error:', error);
         return {
             success: false,
-            error: 'Failed to leave waitlist'
+            error: 'Failed to leave waitlist. Please try again.'
         };
     }
 };

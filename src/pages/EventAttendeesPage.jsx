@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Download, Send, ArrowLeft, Search, Users, CheckCircle, XCircle } from 'lucide-react';
+import { Download, Send, ArrowLeft, Search, Users, CheckCircle, XCircle, Filter } from 'lucide-react';
 import { useAuth } from '@context/AuthContext';
 import Header from '@components/layout/Header';
 import Navigation from '@components/layout/Navigation';
 import LoadingSpinner from '@components/common/LoadingSpinner';
-import { getEventAttendees, exportAttendeesCSV, sendAnnouncement } from '@services/organizerService';
-import { getOrganizerEvents } from '@services/organizerService';
+import { getEventAttendees, exportAttendeesCSV, sendAnnouncement, getEventById } from '@services/organizerService';
 
 const EventAttendeesPage = () => {
     const { eventId } = useParams();
@@ -14,54 +13,91 @@ const EventAttendeesPage = () => {
     const navigate = useNavigate();
     const [event, setEvent] = useState(null);
     const [attendees, setAttendees] = useState([]);
+    const [statistics, setStatistics] = useState(null);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [checkInFilter, setCheckInFilter] = useState('all');
     const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
-    const [announcementMessage, setAnnouncementMessage] = useState('');
+    const [announcementData, setAnnouncementData] = useState({
+        subject: '',
+        message: '',
+        sendVia: 'email'
+    });
     const [sendingAnnouncement, setSendingAnnouncement] = useState(false);
 
     useEffect(() => {
         loadData();
-    }, [eventId, user]);
+    }, [eventId]);
+
+    useEffect(() => {
+        // Reload attendees when search or filter changes
+        loadAttendees();
+    }, [searchQuery, checkInFilter]);
 
     const loadData = async () => {
         setLoading(true);
 
         // Get event details
-        const eventsResult = await getOrganizerEvents(user.id);
-        if (eventsResult.success) {
-            const foundEvent = eventsResult.events.find(e => e.id === parseInt(eventId));
-            setEvent(foundEvent);
+        const eventResult = await getEventById(eventId);
+        if (eventResult.success) {
+            setEvent(eventResult.data);
         }
 
-        // Get attendees
-        const attendeesResult = await getEventAttendees(eventId);
-        if (attendeesResult.success) {
-            setAttendees(attendeesResult.attendees);
-        }
+        // Load attendees
+        await loadAttendees();
 
         setLoading(false);
     };
 
-    const handleExportCSV = () => {
-        if (event && attendees.length > 0) {
-            exportAttendeesCSV(attendees, event.title);
+    const loadAttendees = async () => {
+        const filters = {};
+        
+        if (searchQuery.trim()) {
+            filters.search = searchQuery.trim();
+        }
+        
+        if (checkInFilter !== 'all') {
+            filters.checkInStatus = checkInFilter;
+        }
+
+        const attendeesResult = await getEventAttendees(eventId, filters);
+        if (attendeesResult.success) {
+            setAttendees(attendeesResult.attendees);
+            setStatistics(attendeesResult.statistics);
+        }
+    };
+
+    const handleExportCSV = async () => {
+        if (event) {
+            const result = await exportAttendeesCSV(eventId, event.title);
+            if (!result.success) {
+                alert(result.error || 'Failed to export attendees');
+            }
         }
     };
 
     const handleSendAnnouncement = async () => {
-        if (!announcementMessage.trim()) {
+        if (!announcementData.subject.trim()) {
+            alert('Please enter a subject');
+            return;
+        }
+
+        if (!announcementData.message.trim()) {
             alert('Please enter a message');
             return;
         }
 
         setSendingAnnouncement(true);
-        const result = await sendAnnouncement(eventId, announcementMessage);
+        const result = await sendAnnouncement(eventId, announcementData);
 
         if (result.success) {
-            alert('Announcement sent successfully!');
+            alert(result.message || 'Announcement sent successfully!');
             setShowAnnouncementModal(false);
-            setAnnouncementMessage('');
+            setAnnouncementData({
+                subject: '',
+                message: '',
+                sendVia: 'email'
+            });
         } else {
             alert(result.error || 'Failed to send announcement');
         }
@@ -69,13 +105,11 @@ const EventAttendeesPage = () => {
         setSendingAnnouncement(false);
     };
 
-    const filteredAttendees = attendees.filter(attendee =>
-        attendee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        attendee.email.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const checkedInCount = attendees.filter(a => a.checkInStatus === 'checked_in').length;
-    const notCheckedInCount = attendees.filter(a => a.checkInStatus === 'not_checked_in').length;
+    // Use statistics from API if available, otherwise calculate from attendees
+    const checkedInCount = statistics?.checkedIn || attendees.filter(a => a.checkInStatus === 'checked_in').length;
+    const notCheckedInCount = statistics?.notCheckedIn || attendees.filter(a => a.checkInStatus === 'not_checked_in').length;
+    const totalRegistrations = statistics?.totalRegistrations || attendees.length;
+    const totalAttendees = statistics?.totalAttendees || attendees.reduce((sum, a) => sum + 1 + (a.guests?.length || 0), 0);
 
     if (loading) {
         return <LoadingSpinner message="Loading attendees..." />;
@@ -143,8 +177,13 @@ const EventAttendeesPage = () => {
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-600">Total Registered</p>
-                                <p className="text-2xl font-bold text-gray-900">{attendees.length}</p>
+                                <p className="text-sm text-gray-600">Total Registrations</p>
+                                <p className="text-2xl font-bold text-gray-900">{totalRegistrations}</p>
+                                {statistics?.totalAttendees && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {totalAttendees} total attendees (incl. guests)
+                                    </p>
+                                )}
                             </div>
                             <Users className="w-8 h-8 text-blue-500" />
                         </div>
@@ -155,6 +194,11 @@ const EventAttendeesPage = () => {
                             <div>
                                 <p className="text-sm text-gray-600">Checked In</p>
                                 <p className="text-2xl font-bold text-green-600">{checkedInCount}</p>
+                                {statistics?.checkedIn !== undefined && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {statistics.capacityUsed || '0%'} capacity used
+                                    </p>
+                                )}
                             </div>
                             <CheckCircle className="w-8 h-8 text-green-500" />
                         </div>
@@ -175,14 +219,19 @@ const EventAttendeesPage = () => {
                             <div>
                                 <p className="text-sm text-gray-600">Capacity</p>
                                 <p className="text-2xl font-bold text-gray-900">{event.capacity}</p>
+                                {statistics?.capacityUsed && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {statistics.capacityUsed} used
+                                    </p>
+                                )}
                             </div>
                             <Users className="w-8 h-8 text-gray-400" />
                         </div>
                     </div>
                 </div>
 
-                {/* Search */}
-                <div className="mb-6">
+                {/* Search and Filter */}
+                <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input
@@ -192,6 +241,18 @@ const EventAttendeesPage = () => {
                             placeholder="Search by name or email..."
                             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
                         />
+                    </div>
+                    <div className="relative">
+                        <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <select
+                            value={checkInFilter}
+                            onChange={(e) => setCheckInFilter(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none appearance-none"
+                        >
+                            <option value="all">All Check-in Status</option>
+                            <option value="checked_in">Checked In</option>
+                            <option value="not_checked_in">Not Checked In</option>
+                        </select>
                     </div>
                 </div>
 
@@ -219,15 +280,17 @@ const EventAttendeesPage = () => {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {filteredAttendees.length === 0 ? (
+                                {attendees.length === 0 ? (
                                     <tr>
                                         <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
-                                            {searchQuery ? 'No attendees match your search' : 'No attendees yet'}
+                                            {searchQuery || checkInFilter !== 'all' 
+                                                ? 'No attendees match your search criteria' 
+                                                : 'No attendees yet'}
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredAttendees.map((attendee) => (
-                                        <tr key={attendee.id} className="hover:bg-gray-50">
+                                    attendees.map((attendee) => (
+                                        <tr key={attendee.id || attendee.registrationId} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-sm font-medium text-gray-900">{attendee.name}</div>
                                             </td>
@@ -236,15 +299,28 @@ const EventAttendeesPage = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-sm text-gray-600">
-                                                    {new Date(attendee.registeredAt).toLocaleDateString()}
+                                                    {new Date(attendee.registeredAt).toLocaleDateString('en-US', {
+                                                        year: 'numeric',
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit'
+                                                    })}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-sm text-gray-600">
-                                                    {attendee.guests.length > 0 ? (
-                                                        <span className="text-blue-600 font-medium">
-                                                            {attendee.guests.length} guest(s)
-                                                        </span>
+                                                    {attendee.guests && attendee.guests.length > 0 ? (
+                                                        <div>
+                                                            <span className="text-blue-600 font-medium">
+                                                                {attendee.guests.length} guest(s)
+                                                            </span>
+                                                            <div className="text-xs text-gray-500 mt-1">
+                                                                {attendee.guests.map((g, i) => (
+                                                                    <div key={i}>{g.name}</div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
                                                     ) : (
                                                         'None'
                                                     )}
@@ -252,9 +328,16 @@ const EventAttendeesPage = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 {attendee.checkInStatus === 'checked_in' ? (
-                                                    <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded">
-                                                        Checked In
-                                                    </span>
+                                                    <div>
+                                                        <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded">
+                                                            Checked In
+                                                        </span>
+                                                        {attendee.checkedInAt && (
+                                                            <div className="text-xs text-gray-500 mt-1">
+                                                                {new Date(attendee.checkedInAt).toLocaleTimeString()}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 ) : (
                                                     <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded">
                                                         Not Checked In
@@ -276,16 +359,49 @@ const EventAttendeesPage = () => {
                     <div className="bg-white rounded-lg max-w-2xl w-full p-6">
                         <h2 className="text-2xl font-bold text-gray-900 mb-4">Send Announcement</h2>
                         <p className="text-gray-600 mb-4">
-                            This message will be sent to all {attendees.length} registered attendees via email and SMS.
+                            This message will be sent to all {totalRegistrations} registered attendees.
                         </p>
 
-                        <textarea
-                            value={announcementMessage}
-                            onChange={(e) => setAnnouncementMessage(e.target.value)}
-                            rows={6}
-                            placeholder="Enter your announcement message..."
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none resize-none mb-4"
-                        />
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Subject *
+                            </label>
+                            <input
+                                type="text"
+                                value={announcementData.subject}
+                                onChange={(e) => setAnnouncementData({ ...announcementData, subject: e.target.value })}
+                                placeholder="Enter announcement subject..."
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none mb-4"
+                            />
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Message *
+                            </label>
+                            <textarea
+                                value={announcementData.message}
+                                onChange={(e) => setAnnouncementData({ ...announcementData, message: e.target.value })}
+                                rows={6}
+                                placeholder="Enter your announcement message..."
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none resize-none"
+                            />
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Send Via
+                            </label>
+                            <select
+                                value={announcementData.sendVia}
+                                onChange={(e) => setAnnouncementData({ ...announcementData, sendVia: e.target.value })}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+                            >
+                                <option value="email">Email Only</option>
+                                <option value="sms">SMS Only</option>
+                                <option value="both">Email and SMS</option>
+                            </select>
+                        </div>
 
                         <div className="flex space-x-3">
                             <button
@@ -299,7 +415,10 @@ const EventAttendeesPage = () => {
                                 {sendingAnnouncement ? 'Sending...' : 'Send Announcement'}
                             </button>
                             <button
-                                onClick={() => setShowAnnouncementModal(false)}
+                                onClick={() => {
+                                    setShowAnnouncementModal(false);
+                                    setAnnouncementData({ subject: '', message: '', sendVia: 'email' });
+                                }}
                                 disabled={sendingAnnouncement}
                                 className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
                             >
