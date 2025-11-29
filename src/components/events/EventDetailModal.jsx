@@ -27,7 +27,7 @@ const EventDetailModal = ({ event, onClose, onRegister }) => {
                     <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
                             <span className={`px-2 py-1 rounded text-xs font-medium ${categoryColor.bg} ${categoryColor.text}`}>
-                                {event.category}
+                                {typeof event.category === 'object' ? event.category.name : event.category}
                             </span>
                             <span className={`px-2 py-1 rounded text-xs font-medium ${statusBadge.color}`}>
                                 {statusBadge.label}

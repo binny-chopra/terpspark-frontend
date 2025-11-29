@@ -29,7 +29,7 @@ const WaitlistCard = ({ waitlistEntry, onLeave }) => {
             <div className="bg-orange-50 p-4 border-b border-orange-200">
                 <div className="flex items-center justify-between mb-2">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${categoryColor.bg} ${categoryColor.text}`}>
-                        {event.category}
+                        {typeof event.category === 'object' ? event.category.name : event.category}
                     </span>
                     <span className="px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-700">
                         Waitlist Position: #{waitlistEntry.position}
