@@ -238,23 +238,8 @@ const RegistrationModal = ({ event, onClose, onSubmit, isWaitlist = false }) => 
                                     className="w-4 h-4 text-red-600"
                                 />
                                 <div>
-                                    <p className="font-medium text-gray-900">Email Only</p>
+                                    <p className="font-medium text-gray-900">Email</p>
                                     <p className="text-sm text-gray-600">Receive confirmations and reminders via email</p>
-                                </div>
-                            </label>
-
-                            <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                                <input
-                                    type="radio"
-                                    name="notification"
-                                    value="email_sms"
-                                    checked={formData.notificationPreference === 'email_sms'}
-                                    onChange={(e) => setFormData({ ...formData, notificationPreference: e.target.value })}
-                                    className="w-4 h-4 text-red-600"
-                                />
-                                <div>
-                                    <p className="font-medium text-gray-900">Email & SMS</p>
-                                    <p className="text-sm text-gray-600">Get notifications via email and text messages</p>
                                 </div>
                             </label>
                         </div>
