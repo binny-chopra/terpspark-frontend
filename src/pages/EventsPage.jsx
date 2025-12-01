@@ -163,8 +163,8 @@ const EventsPage = () => {
                         <button
                             onClick={() => setViewMode('grid')}
                             className={`p-2 rounded transition-colors ${viewMode === 'grid'
-                                    ? 'bg-red-600 text-white'
-                                    : 'text-gray-600 hover:bg-gray-100'
+                                ? 'bg-red-600 text-white'
+                                : 'text-gray-600 hover:bg-gray-100'
                                 }`}
                             aria-label="Grid view"
                         >
@@ -173,8 +173,8 @@ const EventsPage = () => {
                         <button
                             onClick={() => setViewMode('list')}
                             className={`p-2 rounded transition-colors ${viewMode === 'list'
-                                    ? 'bg-red-600 text-white'
-                                    : 'text-gray-600 hover:bg-gray-100'
+                                ? 'bg-red-600 text-white'
+                                : 'text-gray-600 hover:bg-gray-100'
                                 }`}
                             aria-label="List view"
                         >
@@ -238,6 +238,7 @@ const EventsPage = () => {
                     event={selectedEvent}
                     onClose={handleCloseModal}
                     onRegister={handleRegister}
+                    user={user}
                 />
             )}
 

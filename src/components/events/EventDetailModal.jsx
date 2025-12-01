@@ -10,7 +10,7 @@ import {
     isEventFull
 } from '@utils/eventUtils';
 
-const EventDetailModal = ({ event, onClose, onRegister }) => {
+const EventDetailModal = ({ event, onClose, onRegister, user }) => {
     if (!event) return null;
 
     const remaining = getRemainingCapacity(event.capacity, event.registeredCount);
@@ -18,6 +18,7 @@ const EventDetailModal = ({ event, onClose, onRegister }) => {
     const statusBadge = getEventStatusBadge(event);
     const categoryColor = getCategoryColor(event.category);
     const isFull = isEventFull(event.capacity, event.registeredCount);
+    const isAdmin = user?.role === 'admin';
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -98,9 +99,9 @@ const EventDetailModal = ({ event, onClose, onRegister }) => {
                                         <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                             <div
                                                 className={`h-full transition-all ${percentage >= 90 ? 'bg-red-500' :
-                                                        percentage >= 70 ? 'bg-orange-500' :
-                                                            percentage >= 50 ? 'bg-yellow-500' :
-                                                                'bg-green-500'
+                                                    percentage >= 70 ? 'bg-orange-500' :
+                                                        percentage >= 50 ? 'bg-yellow-500' :
+                                                            'bg-green-500'
                                                     }`}
                                                 style={{ width: `${percentage}%` }}
                                             />
@@ -162,7 +163,7 @@ const EventDetailModal = ({ event, onClose, onRegister }) => {
 
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-3">
-                        {onRegister && (
+                        {onRegister && !isAdmin && (
                             !isFull ? (
                                 <button
                                     onClick={() => onRegister(event)}
