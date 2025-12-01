@@ -1,6 +1,7 @@
 /**
  * Application-wide constants
  */
+export const BACKEND_URL = "https://puny-cases-slide.loca.lt"
 
 export const USER_ROLES = {
   STUDENT: 'student',

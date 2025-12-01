@@ -1,6 +1,5 @@
 import { getAuthToken } from './authService';
-
-const BACKEND_URL = 'http://127.0.0.1:8000';
+import { BACKEND_URL } from '../utils/constants';
 
 const authHeaders = (includeJson = false) => {
     const token = getAuthToken();

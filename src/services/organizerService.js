@@ -1,6 +1,5 @@
 import { getAuthToken } from './authService';
-
-const BACKEND_URL = 'http://127.0.0.1:8000';
+import { BACKEND_URL } from '../utils/constants';
 
 /**
  * Get organizer's events
@@ -249,15 +248,15 @@ export const duplicateEvent = async (eventId, organizerId) => {
 export const getEventAttendees = async (eventId, filters = {}) => {
     try {
         const params = new URLSearchParams();
-        
+
         if (filters.search) {
             params.append('search', filters.search);
         }
-        
+
         if (filters.checkInStatus) {
             params.append('checkInStatus', filters.checkInStatus);
         }
-        
+
         const queryString = params.toString();
         const url = `${BACKEND_URL}/api/organizer/events/${eventId}/attendees${queryString ? `?${queryString}` : ''}`;
 
@@ -317,7 +316,7 @@ export const exportAttendeesCSV = async (eventId, eventTitle) => {
 
         // Get the CSV content
         const csvContent = await response.text();
-        
+
         // Create blob and download
         const blob = new Blob([csvContent], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);

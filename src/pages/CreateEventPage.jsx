@@ -7,8 +7,7 @@ import Navigation from '@components/layout/Navigation';
 import { getCategories } from '@services/eventService';
 import { createEvent } from '@services/organizerService';
 import { useToast } from '@context/ToastContext';
-
-const BACKEND_URL = 'http://127.0.0.1:8000';
+import { BACKEND_URL } from '../utils/constants';
 
 const CreateEventPage = () => {
     const { user } = useAuth();
@@ -378,7 +377,7 @@ const CreateEventPage = () => {
                                 <p className="text-sm text-red-600 mt-1">{errors.capacity}</p>
                             )}
                             <p className="text-sm text-gray-500 mt-1">
-                                {selectedVenue 
+                                {selectedVenue
                                     ? `Venue capacity: ${selectedVenue.capacity} | System maximum: 5000 attendees`
                                     : 'System maximum: 5000 attendees'}
                             </p>
@@ -437,8 +436,8 @@ const CreateEventPage = () => {
                                 onClick={handleSubmit}
                                 disabled={loading}
                                 className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-colors ${loading
-                                        ? 'bg-gray-400 cursor-not-allowed'
-                                        : 'bg-red-600 text-white hover:bg-red-700'
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-red-600 text-white hover:bg-red-700'
                                     }`}
                             >
                                 <Save className="w-4 h-4" />

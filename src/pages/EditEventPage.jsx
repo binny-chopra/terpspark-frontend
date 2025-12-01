@@ -7,8 +7,7 @@ import Navigation from '@components/layout/Navigation';
 import { getCategories } from '@services/eventService';
 import { getOrganizerEvents, updateEvent } from '@services/organizerService';
 import { useToast } from '@context/ToastContext';
-
-const BACKEND_URL = 'http://127.0.0.1:8000';
+import { BACKEND_URL } from '../utils/constants';
 
 const EditEventPage = () => {
     const { eventId } = useParams();
@@ -432,9 +431,8 @@ const EditEventPage = () => {
                             <button
                                 onClick={handleSubmit}
                                 disabled={saving}
-                                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
-                                    saving ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 text-white hover:bg-red-700'
-                                }`}
+                                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-colors ${saving ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 text-white hover:bg-red-700'
+                                    }`}
                             >
                                 <Save className="w-4 h-4" />
                                 <span>{saving ? 'Updating...' : 'Update Event'}</span>

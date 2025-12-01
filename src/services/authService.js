@@ -1,9 +1,9 @@
 import mockUsers from '@data/mockUsers.json';
 import { setStorageItem, getStorageItem, removeStorageItem } from '@utils/storage';
+import { BACKEND_URL } from '../utils/constants';
 
 const AUTH_TOKEN_KEY = 'terpspark_auth_token';
 const USER_KEY = 'terpspark_user';
-const BACKEND_URL = 'http://127.0.0.1:8000';
 /**
  * Simulates SSO authentication
  * In production, this would call the backend API
@@ -40,7 +40,7 @@ export const login = async (email, password) => {
     // // Remove password from user object
     // const { password: _, ...userWithoutPassword } = user;
 
-  //   // Generate mock token
+    //   // Generate mock token
     const token = data.token;
 
     //   // Store auth data

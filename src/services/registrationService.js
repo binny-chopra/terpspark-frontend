@@ -2,10 +2,10 @@ import mockRegistrations from '@data/mockRegistrations.json';
 import mockEvents from '@data/mockEvents.json';
 import { getStorageItem, setStorageItem } from '@utils/storage';
 import { getAuthToken } from './authService';
+import { BACKEND_URL } from '../utils/constants';
 
 const REGISTRATIONS_KEY = 'terpspark_registrations';
 const WAITLIST_KEY = 'terpspark_waitlist';
-const BACKEND_URL = 'http://127.0.0.1:8000';
 /**
  * Get all registrations from storage or mock data
  */

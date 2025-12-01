@@ -1,7 +1,8 @@
 import { getAuthToken } from './authService';
+import { BACKEND_URL } from '../utils/constants';
 
 // Backend API base URL
-const API_BASE_URL = 'http://127.0.0.1:8000';
+const API_BASE_URL = BACKEND_URL;
 
 /**
  * Helper function to get authorization headers
@@ -11,11 +12,11 @@ const getAuthHeaders = () => {
     const headers = {
         'Content-Type': 'application/json',
     };
-    
+
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     return headers;
 };
 
@@ -27,59 +28,59 @@ export const getAllEvents = async (filters = {}) => {
     try {
         // Build query parameters
         const params = new URLSearchParams();
-        
+
         if (filters.search) {
             params.append('search', filters.search);
         }
-        
+
         if (filters.category && filters.category !== 'all') {
             params.append('category', filters.category);
         }
-        
+
         if (filters.organizer) {
             params.append('organizer', filters.organizer);
         }
-        
+
         if (filters.startDate) {
             params.append('startDate', filters.startDate);
         }
-        
+
         if (filters.endDate) {
             params.append('endDate', filters.endDate);
         }
-        
+
         if (filters.availableOnly) {
             params.append('availability', 'true');
         }
-        
+
         if (filters.sortBy) {
             params.append('sortBy', filters.sortBy);
         }
-        
+
         if (filters.page) {
             params.append('page', filters.page);
         }
-        
+
         if (filters.limit) {
             params.append('limit', filters.limit);
         }
-        
+
         const queryString = params.toString();
         const url = `${API_BASE_URL}/api/events${queryString ? `?${queryString}` : ''}`;
-        
+
         const response = await fetch(url, {
             headers: getAuthHeaders()
         });
-        
+
         const data = await response.json();
-        
+
         if (!response.ok) {
             return {
                 success: false,
                 error: data.detail || data.error || 'Failed to fetch events. Please try again.'
             };
         }
-        
+
         return {
             success: true,
             events: data.events || [],
@@ -205,7 +206,7 @@ export const getUpcomingEvents = async (limit = 5) => {
     try {
         const today = new Date();
         const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-        
+
         const startDate = today.toISOString().split('T')[0];
         const endDate = nextWeek.toISOString().split('T')[0];
 
@@ -242,10 +243,10 @@ export const getUpcomingEvents = async (limit = 5) => {
  */
 export const searchEvents = async (query) => {
     try {
-        const url = query && query.trim() !== '' 
+        const url = query && query.trim() !== ''
             ? `${API_BASE_URL}/api/events?search=${encodeURIComponent(query)}`
             : `${API_BASE_URL}/api/events`;
-            
+
         const response = await fetch(url, {
             headers: getAuthHeaders()
         });

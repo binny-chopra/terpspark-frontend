@@ -44,9 +44,9 @@ const DashboardPage = () => {
       const now = new Date();
       const upcoming = eventsResult.success
         ? (eventsResult.events || []).filter(evt => {
-            const date = evt.date ? new Date(evt.date) : null;
-            return date && date >= now;
-          }).length
+          const date = evt.date ? new Date(evt.date) : null;
+          return date && date >= now;
+        }).length
         : 0;
 
       const registrations = regsResult.success ? (regsResult.registrations || []) : [];
@@ -246,31 +246,6 @@ const DashboardPage = () => {
             >
               {roleContent.secondaryAction.label}
             </button>
-          </div>
-        </div>
-
-        {/* Recent Activity (Placeholder) */}
-        <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Phase 2 features now available!</p>
-                  <p className="text-xs text-gray-500">Browse and discover campus events</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">8 new events published this week</p>
-                  <p className="text-xs text-gray-500">Check them out in Browse Events</p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </main>
