@@ -162,20 +162,22 @@ const EventDetailModal = ({ event, onClose, onRegister }) => {
 
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-3">
-                        {!isFull ? (
-                            <button
-                                onClick={() => onRegister(event)}
-                                className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
-                            >
-                                Register for Event
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => onRegister(event)}
-                                className="flex-1 px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-colors"
-                            >
-                                Join Waitlist
-                            </button>
+                        {onRegister && (
+                            !isFull ? (
+                                <button
+                                    onClick={() => onRegister(event)}
+                                    className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
+                                >
+                                    Register for Event
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => onRegister(event)}
+                                    className="flex-1 px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-colors"
+                                >
+                                    Join Waitlist
+                                </button>
+                            )
                         )}
                         <button
                             onClick={onClose}

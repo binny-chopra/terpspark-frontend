@@ -6,6 +6,7 @@ import { USER_ROLES } from '@utils/constants';
 
 // Pages
 import LoginPage from '@pages/LoginPage';
+import RegisterPage from '@pages/RegisterPage';
 import DashboardPage from '@pages/DashboardPage';
 import EventsPage from '@pages/EventsPage';
 import MyRegistrationsPage from '@pages/MyRegistrationsPage';
@@ -31,6 +32,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
 
           {/* Common Routes */}
           <Route

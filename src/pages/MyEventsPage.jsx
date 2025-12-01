@@ -6,14 +6,18 @@ import Header from '@components/layout/Header';
 import Navigation from '@components/layout/Navigation';
 import OrganizerEventCard from '@components/organizer/OrganizerEventCard';
 import LoadingSpinner from '@components/common/LoadingSpinner';
-import { getOrganizerEvents, cancelEvent, duplicateEvent } from '@services/organizerService';
+import EventDetailModal from '@components/events/EventDetailModal';
+import { getOrganizerEvents, cancelEvent, duplicateEvent, updateEvent } from '@services/organizerService';
+import { useToast } from '@context/ToastContext';
 
 const MyEventsPage = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { addToast } = useToast();
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('all'); // all, draft, pending, published, cancelled
+    const [selectedEvent, setSelectedEvent] = useState(null);
 
     useEffect(() => {
         loadEvents();
@@ -35,20 +39,45 @@ const MyEventsPage = () => {
 
         const result = await cancelEvent(eventId, user.id);
         if (result.success) {
-            alert('Event cancelled successfully');
+            addToast('Event cancelled successfully', 'warning');
             loadEvents();
         } else {
-            alert(result.error || 'Failed to cancel event');
+            addToast(result.error || 'Failed to cancel event', 'error');
         }
     };
 
     const handleDuplicateEvent = async (eventId) => {
         const result = await duplicateEvent(eventId, user.id);
         if (result.success) {
-            alert('Event duplicated successfully as a draft');
+            addToast('Event duplicated successfully as a draft', 'success');
             loadEvents();
         } else {
-            alert(result.error || 'Failed to duplicate event');
+            addToast(result.error || 'Failed to duplicate event', 'error');
+        }
+    };
+
+    const handleSendForApproval = async (event) => {
+        const payload = {
+            title: event.title,
+            description: event.description,
+            categoryId: event.categoryId,
+            date: event.date,
+            startTime: event.startTime,
+            endTime: event.endTime,
+            venue: event.venue,
+            location: event.location,
+            capacity: event.capacity,
+            tags: event.tags || [],
+            imageUrl: event.imageUrl || null,
+            status: 'pending'
+        };
+
+        const result = await updateEvent(event.id, payload);
+        if (result.success) {
+            addToast('Event submitted for approval', 'success');
+            loadEvents(); // refresh list after status change
+        } else {
+            addToast(result.error || 'Failed to submit for approval', 'error');
         }
     };
 
@@ -58,6 +87,10 @@ const MyEventsPage = () => {
 
     const handleViewAttendees = (eventId) => {
         navigate(`/event-attendees/${eventId}`);
+    };
+
+    const handleViewDetails = (event) => {
+        setSelectedEvent(event);
     };
 
     // Filter events by status
@@ -181,11 +214,21 @@ const MyEventsPage = () => {
                                 onCancel={handleCancelEvent}
                                 onDuplicate={handleDuplicateEvent}
                                 onViewAttendees={handleViewAttendees}
+                                onViewDetails={handleViewDetails}
+                                onSendForApproval={handleSendForApproval}
                             />
                         ))}
                     </div>
                 )}
             </main>
+
+            {selectedEvent && (
+                <EventDetailModal
+                    event={selectedEvent}
+                    onClose={() => setSelectedEvent(null)}
+                    onRegister={null} // hide register/waitlist buttons in My Events context
+                />
+            )}
         </div>
     );
 };

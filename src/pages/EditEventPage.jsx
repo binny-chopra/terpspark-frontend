@@ -1,19 +1,27 @@
-import { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, X, AlertCircle, Clock, MapPin, Users, Tag } from 'lucide-react';
-import { getEventById, updateEvent } from '../services/organizerService';
-import { getAllCategories } from '../services/eventService';
+import { Calendar, MapPin, Users, Image as ImageIcon, Tag, Save, X } from 'lucide-react';
+import { useAuth } from '@context/AuthContext';
+import Header from '@components/layout/Header';
+import Navigation from '@components/layout/Navigation';
+import { getCategories } from '@services/eventService';
+import { getOrganizerEvents, updateEvent } from '@services/organizerService';
+import { useToast } from '@context/ToastContext';
+
+const BACKEND_URL = 'http://127.0.0.1:8000';
 
 const EditEventPage = () => {
     const { eventId } = useParams();
     const navigate = useNavigate();
-    const [event, setEvent] = useState(null);
-    const [categories, setCategories] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
-    const [errors, setErrors] = useState({});
-    const [toast, setToast] = useState(null);
+    const { user } = useAuth();
+    const { addToast } = useToast();
 
+    const [categories, setCategories] = useState([]);
+    const [venues, setVenues] = useState([]);
+    const [selectedVenue, setSelectedVenue] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [errors, setErrors] = useState({});
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -24,113 +32,115 @@ const EditEventPage = () => {
         venue: '',
         location: '',
         capacity: '',
-        imageUrl: '',
         tags: '',
-        changeNote: ''
+        imageUrl: ''
     });
 
     useEffect(() => {
-        loadEventAndCategories();
-    }, [eventId]);
+        loadData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [eventId, user?.id]);
 
-    const loadEventAndCategories = async () => {
-        setIsLoading(true);
+    const loadData = async () => {
+        setLoading(true);
+        let eventPayload = null;
+
+        const [catResult, eventsResult] = await Promise.all([
+            getCategories(),
+            getOrganizerEvents(user?.id)
+        ]);
+
+        if (catResult.success) {
+            setCategories(catResult.categories);
+        }
+
+        if (eventsResult.success && eventsResult.events) {
+            eventPayload = eventsResult.events.find((evt) => String(evt.id) === String(eventId));
+        }
+
+        if (eventPayload) {
+            setFormData({
+                title: eventPayload.title || '',
+                description: eventPayload.description || '',
+                categoryId: eventPayload.categoryId || '',
+                date: eventPayload.date || '',
+                startTime: eventPayload.startTime || '',
+                endTime: eventPayload.endTime || '',
+                venue: eventPayload.venue || '',
+                location: eventPayload.location || '',
+                capacity: eventPayload.capacity || '',
+                tags: eventPayload.tags?.join(', ') || '',
+                imageUrl: eventPayload.imageUrl || ''
+            });
+        } else {
+            addToast('Event not found', 'error');
+            navigate('/my-events');
+            return;
+        }
+
         try {
-            // Load event
-            const eventResult = await getEventById(eventId);
-            if (eventResult.success) {
-                const evt = eventResult.data;
-                setEvent(evt);
-
-                // Populate form
-                setFormData({
-                    title: evt.title || '',
-                    description: evt.description || '',
-                    categoryId: evt.categoryId || '',
-                    date: evt.date || '',
-                    startTime: evt.startTime || '',
-                    endTime: evt.endTime || '',
-                    venue: evt.venue || '',
-                    location: evt.location || '',
-                    capacity: evt.capacity || '',
-                    imageUrl: evt.imageUrl || '',
-                    tags: evt.tags?.join(', ') || '',
-                    changeNote: ''
-                });
-            } else {
-                showToast('Event not found', 'error');
-                navigate('/organizer/events');
-            }
-
-            // Load categories
-            const categoriesResult = await getAllCategories();
-            if (categoriesResult.success) {
-                setCategories(categoriesResult.data);
+            const response = await fetch(`${BACKEND_URL}/api/venues`);
+            const data = await response.json();
+            if (data.success) {
+                setVenues(data.venues || []);
+                if (eventPayload) {
+                    const match = data.venues.find(
+                        (v) => v.id === eventPayload.venueId || v.name === eventPayload.venue
+                    );
+                    if (match) setSelectedVenue(match);
+                }
             }
         } catch (error) {
-            console.error('Failed to load event:', error);
-            showToast('Failed to load event data', 'error');
-        } finally {
-            setIsLoading(false);
+            console.error('Failed to load venues:', error);
+        }
+
+        setLoading(false);
+    };
+
+    const handleChange = (field, value) => {
+        setFormData({ ...formData, [field]: value });
+        if (errors[field]) {
+            setErrors({ ...errors, [field]: '' });
         }
     };
 
-    const showToast = (message, type = 'info') => {
-        setToast({ message, type });
-        setTimeout(() => setToast(null), 3000);
-    };
-
-    const canEdit = () => {
-        if (!event) return false;
-        // Can edit if status is draft or pending
-        return event.status === 'draft' || event.status === 'pending';
-    };
-
-    const getEditableFields = () => {
-        if (!event) return [];
-
-        if (event.status === 'draft') {
-            // All fields editable for draft
-            return ['all'];
-        } else if (event.status === 'pending') {
-            // Most fields editable for pending (will require resubmission)
-            return ['all'];
-        } else if (event.status === 'published') {
-            // Very limited editing for published events
-            return ['capacity', 'description'];
+    const handleVenueChange = (venueId) => {
+        const venue = venues.find((v) => v.id === venueId);
+        if (venue) {
+            setSelectedVenue(venue);
+            setFormData({
+                ...formData,
+                venue: venue.name,
+                location: venue.building
+            });
+            if (errors.venue || errors.location) {
+                setErrors({ ...errors, venue: '', location: '' });
+            }
+        } else {
+            setSelectedVenue(null);
+            setFormData({ ...formData, venue: '', location: '' });
         }
-
-        return [];
     };
 
     const validateForm = () => {
         const newErrors = {};
 
         if (!formData.title.trim()) {
-            newErrors.title = 'Title is required';
-        } else if (formData.title.length < 5) {
-            newErrors.title = 'Title must be at least 5 characters';
+            newErrors.title = 'Event title is required';
         }
 
         if (!formData.description.trim()) {
-            newErrors.description = 'Description is required';
+            newErrors.description = 'Event description is required';
         } else if (formData.description.length < 50) {
             newErrors.description = 'Description must be at least 50 characters';
         }
 
         if (!formData.categoryId) {
-            newErrors.categoryId = 'Category is required';
+            newErrors.categoryId = 'Please select a category';
         }
 
         if (!formData.date) {
-            newErrors.date = 'Date is required';
-        } else {
-            const eventDate = new Date(formData.date);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (eventDate < today) {
-                newErrors.date = 'Event date must be in the future';
-            }
+            newErrors.date = 'Event date is required';
         }
 
         if (!formData.startTime) {
@@ -141,10 +151,8 @@ const EditEventPage = () => {
             newErrors.endTime = 'End time is required';
         }
 
-        if (formData.startTime && formData.endTime) {
-            if (formData.endTime <= formData.startTime) {
-                newErrors.endTime = 'End time must be after start time';
-            }
+        if (formData.startTime && formData.endTime && formData.endTime <= formData.startTime) {
+            newErrors.endTime = 'End time must be after start time';
         }
 
         if (!formData.venue.trim()) {
@@ -157,472 +165,291 @@ const EditEventPage = () => {
 
         if (!formData.capacity) {
             newErrors.capacity = 'Capacity is required';
-        } else {
-            const capacity = parseInt(formData.capacity);
-            if (isNaN(capacity) || capacity < 1) {
-                newErrors.capacity = 'Capacity must be at least 1';
-            } else if (capacity > 5000) {
-                newErrors.capacity = 'Capacity cannot exceed 5000';
-            }
-        }
-
-        if (event.status === 'pending' && !formData.changeNote.trim()) {
-            newErrors.changeNote = 'Change note is required when editing pending events';
+        } else if (parseInt(formData.capacity, 10) < 1) {
+            newErrors.capacity = 'Capacity must be at least 1';
+        } else if (parseInt(formData.capacity, 10) > 5000) {
+            newErrors.capacity = 'Capacity cannot exceed 5000';
+        } else if (selectedVenue && parseInt(formData.capacity, 10) > selectedVenue.capacity) {
+            newErrors.capacity = `Capacity cannot exceed venue capacity of ${selectedVenue.capacity}`;
         }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-        // Clear error for this field
-        if (errors[name]) {
-            setErrors(prev => ({
-                ...prev,
-                [name]: ''
-            }));
-        }
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         if (!validateForm()) {
-            showToast('Please fix the errors in the form', 'error');
+            addToast('Please fix the highlighted errors', 'warning');
             return;
         }
 
-        setIsSaving(true);
-        try {
-            const updateData = {
-                ...formData,
-                capacity: parseInt(formData.capacity),
-                tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
-            };
+        setSaving(true);
+        const payload = {
+            ...formData,
+            capacity: parseInt(formData.capacity, 10),
+            tags: formData.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
+            organizerId: user.id
+        };
 
-            const result = await updateEvent(eventId, updateData);
+        const result = await updateEvent(eventId, payload);
 
-            if (result.success) {
-                showToast('Event updated successfully!', 'success');
-
-                // If pending event, it's resubmitted for approval
-                if (event.status === 'pending') {
-                    showToast('Event resubmitted for approval', 'info');
-                }
-
-                setTimeout(() => {
-                    navigate('/organizer/events');
-                }, 1500);
-            } else {
-                showToast(result.error || 'Failed to update event', 'error');
-            }
-        } catch (error) {
-            console.error('Update error:', error);
-            showToast('Failed to update event', 'error');
-        } finally {
-            setIsSaving(false);
+        if (result.success) {
+            addToast('Event updated successfully', 'success');
+            navigate('/my-events');
+        } else {
+            addToast(result.error || 'Failed to update event', 'error');
         }
+
+        setSaving(false);
     };
 
     const handleCancel = () => {
-        if (confirm('Are you sure you want to cancel? All changes will be lost.')) {
-            navigate('/organizer/events');
+        if (window.confirm('Are you sure you want to cancel? All changes will be lost.')) {
+            navigate('/my-events');
         }
     };
 
-    if (isLoading) {
+    if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-umd-red"></div>
-            </div>
-        );
-    }
-
-    if (!event || !canEdit()) {
-        return (
-            <div className="container mx-auto px-4 py-8">
-                <div className="text-center">
-                    <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Cannot Edit Event</h2>
-                    <p className="text-gray-600 mb-4">
-                        {!event ? 'Event not found' : `Events with status "${event.status}" cannot be edited`}
-                    </p>
-                    <button
-                        onClick={() => navigate('/organizer/events')}
-                        className="text-umd-red hover:underline"
-                    >
-                        Back to My Events
-                    </button>
-                </div>
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="animate-spin w-10 h-10 border-2 border-red-600 border-t-transparent rounded-full"></div>
             </div>
         );
     }
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Toast */}
-            {toast && (
-                <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
-                    <div className={`${toast.type === 'success' ? 'bg-green-50 text-green-800 border-green-200' :
-                        toast.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' :
-                            'bg-blue-50 text-blue-800 border-blue-200'
-                        } border rounded-lg shadow-lg p-4 min-w-[300px]`}>
-                        <p className="font-medium">{toast.message}</p>
-                    </div>
+            <Header />
+            <Navigation />
+
+            <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-gray-900">Edit Event</h1>
+                    <p className="text-gray-600 mt-1">Update your event details and save changes.</p>
                 </div>
-            )}
 
-            {/* Header */}
-            <div className="bg-white shadow-sm border-b border-gray-200">
-                <div className="container mx-auto px-4 py-6">
-                    <button
-                        onClick={() => navigate('/organizer/events')}
-                        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                        Back to My Events
-                    </button>
-
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900 mb-2">Edit Event</h1>
-                            <p className="text-gray-600">Update your event details</p>
-                            <div className="mt-2">
-                                <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${event.status === 'draft' ? 'bg-gray-100 text-gray-800' :
-                                    event.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                        'bg-blue-100 text-blue-800'
-                                    }`}>
-                                    Status: {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Notice for pending events */}
-            {event.status === 'pending' && (
-                <div className="bg-yellow-50 border-b border-yellow-200">
-                    <div className="container mx-auto px-4 py-4">
-                        <div className="flex items-start gap-3">
-                            <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                            <div>
-                                <h3 className="font-semibold text-yellow-900">Pending Event</h3>
-                                <p className="text-sm text-yellow-800">
-                                    This event is pending approval. Any changes will require re-submission for approval.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Form */}
-            <div className="container mx-auto px-4 py-8">
-                <form onSubmit={handleSubmit} className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-8">
-                    {/* Basic Information */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div className="space-y-6">
-                        <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">
-                            Basic Information
-                        </h2>
-
-                        {/* Title */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Event Title *
                             </label>
                             <input
                                 type="text"
-                                name="title"
                                 value={formData.title}
-                                onChange={handleChange}
-                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-umd-red focus:border-transparent ${errors.title ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                placeholder="Enter event title"
+                                onChange={(e) => handleChange('title', e.target.value)}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+                                placeholder="e.g., Fall Career Fair 2025"
                             />
-                            {errors.title && (
-                                <p className="mt-1 text-sm text-red-600">{errors.title}</p>
-                            )}
+                            {errors.title && <p className="text-sm text-red-600 mt-1">{errors.title}</p>}
                         </div>
 
-                        {/* Category */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Category *
-                            </label>
-                            <div className="relative">
-                                <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                <select
-                                    name="categoryId"
-                                    value={formData.categoryId}
-                                    onChange={handleChange}
-                                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-umd-red focus:border-transparent ${errors.categoryId ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                >
-                                    <option value="">Select a category</option>
-                                    {categories.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            {errors.categoryId && (
-                                <p className="mt-1 text-sm text-red-600">{errors.categoryId}</p>
-                            )}
-                        </div>
-
-                        {/* Description */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Description * (minimum 50 characters)
                             </label>
                             <textarea
-                                name="description"
                                 value={formData.description}
-                                onChange={handleChange}
+                                onChange={(e) => handleChange('description', e.target.value)}
                                 rows={6}
-                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-umd-red focus:border-transparent ${errors.description ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                placeholder="Describe your event in detail..."
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none resize-none"
+                                placeholder="Provide a detailed description of your event..."
                             />
-                            <div className="flex justify-between mt-1">
-                                {errors.description ? (
-                                    <p className="text-sm text-red-600">{errors.description}</p>
-                                ) : (
-                                    <p className="text-sm text-gray-500">
-                                        {formData.description.length} / 50 minimum
-                                    </p>
-                                )}
+                            <div className="flex items-center justify-between mt-1">
+                                {errors.description && <p className="text-sm text-red-600">{errors.description}</p>}
+                                <p className="text-sm text-gray-500 ml-auto">
+                                    {formData.description.length} characters
+                                </p>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Date & Time */}
-                    <div className="mt-8 space-y-6">
-                        <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">
-                            Date & Time
-                        </h2>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Category *
+                            </label>
+                            <select
+                                value={formData.categoryId}
+                                onChange={(e) => handleChange('categoryId', e.target.value)}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+                            >
+                                <option value="">Select a category</option>
+                                {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.categoryId && <p className="text-sm text-red-600 mt-1">{errors.categoryId}</p>}
+                        </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {/* Date */}
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Date *
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Event Date *
                                 </label>
-                                <input
-                                    type="date"
-                                    name="date"
-                                    value={formData.date}
-                                    onChange={handleChange}
-                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-umd-red focus:border-transparent ${errors.date ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                />
-                                {errors.date && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.date}</p>
-                                )}
+                                <div className="relative">
+                                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="date"
+                                        value={formData.date}
+                                        onChange={(e) => handleChange('date', e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+                                    />
+                                </div>
+                                {errors.date && <p className="text-sm text-red-600 mt-1">{errors.date}</p>}
                             </div>
 
-                            {/* Start Time */}
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Start Time *
                                 </label>
-                                <div className="relative">
-                                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                    <input
-                                        type="time"
-                                        name="startTime"
-                                        value={formData.startTime}
-                                        onChange={handleChange}
-                                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-umd-red focus:border-transparent ${errors.startTime ? 'border-red-500' : 'border-gray-300'
-                                            }`}
-                                    />
-                                </div>
-                                {errors.startTime && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.startTime}</p>
-                                )}
+                                <input
+                                    type="time"
+                                    value={formData.startTime}
+                                    onChange={(e) => handleChange('startTime', e.target.value)}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+                                />
+                                {errors.startTime && <p className="text-sm text-red-600 mt-1">{errors.startTime}</p>}
                             </div>
 
-                            {/* End Time */}
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     End Time *
                                 </label>
-                                <div className="relative">
-                                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                    <input
-                                        type="time"
-                                        name="endTime"
-                                        value={formData.endTime}
-                                        onChange={handleChange}
-                                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-umd-red focus:border-transparent ${errors.endTime ? 'border-red-500' : 'border-gray-300'
-                                            }`}
-                                    />
-                                </div>
-                                {errors.endTime && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.endTime}</p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Location */}
-                    <div className="mt-8 space-y-6">
-                        <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">
-                            Location
-                        </h2>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Venue */}
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Venue *
-                                </label>
-                                <div className="relative">
-                                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                    <input
-                                        type="text"
-                                        name="venue"
-                                        value={formData.venue}
-                                        onChange={handleChange}
-                                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-umd-red focus:border-transparent ${errors.venue ? 'border-red-500' : 'border-gray-300'
-                                            }`}
-                                        placeholder="e.g., Stamp Student Union"
-                                    />
-                                </div>
-                                {errors.venue && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.venue}</p>
-                                )}
-                            </div>
-
-                            {/* Location */}
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Room/Location *
-                                </label>
                                 <input
-                                    type="text"
-                                    name="location"
-                                    value={formData.location}
-                                    onChange={handleChange}
-                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-umd-red focus:border-transparent ${errors.location ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                    placeholder="e.g., Grand Ballroom"
+                                    type="time"
+                                    value={formData.endTime}
+                                    onChange={(e) => handleChange('endTime', e.target.value)}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
                                 />
-                                {errors.location && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.location}</p>
-                                )}
+                                {errors.endTime && <p className="text-sm text-red-600 mt-1">{errors.endTime}</p>}
                             </div>
                         </div>
-                    </div>
 
-                    {/* Additional Details */}
-                    <div className="mt-8 space-y-6">
-                        <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">
-                            Additional Details
-                        </h2>
-
-                        {/* Capacity */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Capacity * (1-5000)
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Venue *
                             </label>
                             <div className="relative">
-                                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                <input
-                                    type="number"
-                                    name="capacity"
-                                    value={formData.capacity}
-                                    onChange={handleChange}
-                                    min="1"
-                                    max="5000"
-                                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-umd-red focus:border-transparent ${errors.capacity ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                    placeholder="Maximum number of attendees"
-                                />
+                                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                                <select
+                                    value={selectedVenue?.id || ''}
+                                    onChange={(e) => handleVenueChange(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none appearance-none"
+                                >
+                                    <option value="">Select a venue</option>
+                                    {venues.filter((v) => v.isActive !== false).map((venue) => (
+                                        <option key={venue.id} value={venue.id}>
+                                            {venue.name} - {venue.building} (Capacity: {venue.capacity})
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
-                            {errors.capacity && (
-                                <p className="mt-1 text-sm text-red-600">{errors.capacity}</p>
+                            {errors.venue && <p className="text-sm text-red-600 mt-1">{errors.venue}</p>}
+                            {selectedVenue && (
+                                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <p className="text-sm text-blue-800">
+                                        <strong>Selected Venue:</strong> {selectedVenue.name} - {selectedVenue.building}
+                                    </p>
+                                    <p className="text-sm text-blue-700 mt-1">
+                                        <strong>Max Capacity:</strong> {selectedVenue.capacity} attendees
+                                    </p>
+                                    {selectedVenue.facilities && selectedVenue.facilities.length > 0 && (
+                                        <p className="text-sm text-blue-700 mt-1">
+                                            <strong>Facilities:</strong> {selectedVenue.facilities.join(', ')}
+                                        </p>
+                                    )}
+                                </div>
                             )}
                         </div>
 
-                        {/* Image URL */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Image URL (optional)
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Capacity *
                             </label>
-                            <input
-                                type="url"
-                                name="imageUrl"
-                                value={formData.imageUrl}
-                                onChange={handleChange}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-umd-red focus:border-transparent"
-                                placeholder="https://example.com/image.jpg"
-                            />
-                        </div>
-
-                        {/* Tags */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Tags (comma-separated, optional)
-                            </label>
-                            <input
-                                type="text"
-                                name="tags"
-                                value={formData.tags}
-                                onChange={handleChange}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-umd-red focus:border-transparent"
-                                placeholder="e.g., networking, workshop, free food"
-                            />
-                        </div>
-
-                        {/* Change Note (for pending events) */}
-                        {event.status === 'pending' && (
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Change Note * (required for pending events)
-                                </label>
-                                <textarea
-                                    name="changeNote"
-                                    value={formData.changeNote}
-                                    onChange={handleChange}
-                                    rows={3}
-                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-umd-red focus:border-transparent ${errors.changeNote ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                    placeholder="Briefly explain what changes you made..."
+                            <div className="relative">
+                                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="number"
+                                    value={formData.capacity}
+                                    onChange={(e) => handleChange('capacity', e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+                                    placeholder="Maximum number of attendees"
+                                    min="1"
+                                    max="5000"
                                 />
-                                {errors.changeNote && (
-                                    <p className="mt-1 text-sm text-red-600">{errors.changeNote}</p>
-                                )}
                             </div>
-                        )}
-                    </div>
+                            {errors.capacity && <p className="text-sm text-red-600 mt-1">{errors.capacity}</p>}
+                            <p className="text-sm text-gray-500 mt-1">
+                                {selectedVenue
+                                    ? `Venue capacity: ${selectedVenue.capacity} | System maximum: 5000 attendees`
+                                    : 'System maximum: 5000 attendees'}
+                            </p>
+                        </div>
 
-                    {/* Actions */}
-                    <div className="mt-8 pt-6 border-t border-gray-200 flex gap-4">
-                        <button
-                            type="submit"
-                            disabled={isSaving}
-                            className="flex-1 bg-umd-red text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                            <Save className="w-5 h-5" />
-                            {isSaving ? 'Saving...' : 'Save Changes'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleCancel}
-                            className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center gap-2"
-                        >
-                            <X className="w-5 h-5" />
-                            Cancel
-                        </button>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Tags (Optional)
+                            </label>
+                            <div className="relative">
+                                <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    value={formData.tags}
+                                    onChange={(e) => handleChange('tags', e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+                                    placeholder="career, networking, professional (comma-separated)"
+                                />
+                            </div>
+                            <p className="text-sm text-gray-500 mt-1">Separate multiple tags with commas</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Event Image URL (Optional)
+                            </label>
+                            <div className="relative">
+                                <ImageIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="url"
+                                    value={formData.imageUrl}
+                                    onChange={(e) => handleChange('imageUrl', e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+                                    placeholder="https://example.com/image.jpg"
+                                />
+                            </div>
+                            <p className="text-sm text-gray-500 mt-1">Provide a URL to an event banner or poster image</p>
+                        </div>
+
+                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p className="text-sm text-blue-800">
+                                <strong>Note:</strong> Updates may require admin review before they are reflected to students.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                            <button
+                                onClick={handleSubmit}
+                                disabled={saving}
+                                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
+                                    saving ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 text-white hover:bg-red-700'
+                                }`}
+                            >
+                                <Save className="w-4 h-4" />
+                                <span>{saving ? 'Updating...' : 'Update Event'}</span>
+                            </button>
+                            <button
+                                onClick={handleCancel}
+                                disabled={saving}
+                                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
-                </form>
-            </div>
+                </div>
+            </main>
         </div>
     );
 };

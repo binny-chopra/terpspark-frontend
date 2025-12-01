@@ -6,12 +6,14 @@ import Header from '@components/layout/Header';
 import Navigation from '@components/layout/Navigation';
 import { getCategories } from '@services/eventService';
 import { createEvent } from '@services/organizerService';
+import { useToast } from '@context/ToastContext';
 
 const BACKEND_URL = 'http://127.0.0.1:8000';
 
 const CreateEventPage = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { addToast } = useToast();
     const [categories, setCategories] = useState([]);
     const [venues, setVenues] = useState([]);
     const [selectedVenue, setSelectedVenue] = useState(null);
@@ -155,6 +157,7 @@ const CreateEventPage = () => {
         e.preventDefault();
 
         if (!validateForm()) {
+            addToast('Please fix the highlighted errors', 'warning');
             return;
         }
 
@@ -170,10 +173,10 @@ const CreateEventPage = () => {
         const result = await createEvent(eventData);
 
         if (result.success) {
-            alert('Event created successfully! It will be visible after admin approval.');
+            addToast('Event created successfully! Awaiting admin approval.', 'success');
             navigate('/my-events');
         } else {
-            alert(result.error || 'Failed to create event');
+            addToast(result.error || 'Failed to create event', 'error');
         }
 
         setLoading(false);

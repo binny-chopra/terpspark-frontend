@@ -6,10 +6,12 @@ import Header from '@components/layout/Header';
 import Navigation from '@components/layout/Navigation';
 import LoadingSpinner from '@components/common/LoadingSpinner';
 import { getEventAttendees, exportAttendeesCSV, sendAnnouncement, getEventById } from '@services/organizerService';
+import { useToast } from '@context/ToastContext';
 
 const EventAttendeesPage = () => {
     const { eventId } = useParams();
     const { user } = useAuth();
+    const { addToast } = useToast();
     const navigate = useNavigate();
     const [event, setEvent] = useState(null);
     const [attendees, setAttendees] = useState([]);
@@ -71,19 +73,19 @@ const EventAttendeesPage = () => {
         if (event) {
             const result = await exportAttendeesCSV(eventId, event.title);
             if (!result.success) {
-                alert(result.error || 'Failed to export attendees');
+                addToast(result.error || 'Failed to export attendees', 'error');
             }
         }
     };
 
     const handleSendAnnouncement = async () => {
         if (!announcementData.subject.trim()) {
-            alert('Please enter a subject');
+            addToast('Please enter a subject', 'warning');
             return;
         }
 
         if (!announcementData.message.trim()) {
-            alert('Please enter a message');
+            addToast('Please enter a message', 'warning');
             return;
         }
 
@@ -91,7 +93,7 @@ const EventAttendeesPage = () => {
         const result = await sendAnnouncement(eventId, announcementData);
 
         if (result.success) {
-            alert(result.message || 'Announcement sent successfully!');
+            addToast(result.message || 'Announcement sent successfully!', 'success');
             setShowAnnouncementModal(false);
             setAnnouncementData({
                 subject: '',
@@ -99,7 +101,7 @@ const EventAttendeesPage = () => {
                 sendVia: 'email'
             });
         } else {
-            alert(result.error || 'Failed to send announcement');
+            addToast(result.error || 'Failed to send announcement', 'error');
         }
 
         setSendingAnnouncement(false);

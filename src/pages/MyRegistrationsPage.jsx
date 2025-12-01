@@ -13,9 +13,11 @@ import {
     cancelRegistration,
     leaveWaitlist
 } from '@services/registrationService';
+import { useToast } from '@context/ToastContext';
 
 const MyRegistrationsPage = () => {
     const { user } = useAuth();
+    const { addToast } = useToast();
     const [registrations, setRegistrations] = useState([]);
     const [waitlist, setWaitlist] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -49,12 +51,10 @@ const MyRegistrationsPage = () => {
         const result = await cancelRegistration(user.id, registrationId);
 
         if (result.success) {
-            // Show success message
-            alert('Registration cancelled successfully');
-            // Reload data
+            addToast('Registration cancelled successfully', 'warning');
             loadData();
         } else {
-            alert(result.error || 'Failed to cancel registration');
+            addToast(result.error || 'Failed to cancel registration', 'error');
         }
     };
 
@@ -62,10 +62,10 @@ const MyRegistrationsPage = () => {
         const result = await leaveWaitlist(user.id, waitlistId);
 
         if (result.success) {
-            alert('Removed from waitlist successfully');
+            addToast('Removed from waitlist successfully', 'warning');
             loadData();
         } else {
-            alert(result.error || 'Failed to leave waitlist');
+            addToast(result.error || 'Failed to leave waitlist', 'error');
         }
     };
 

@@ -16,10 +16,12 @@ import {
     updateVenue,
     retireVenue
 } from '@services/adminService';
+import { useToast } from '@context/ToastContext';
 
 const ManagementPage = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { addToast } = useToast();
     const [activeTab, setActiveTab] = useState('categories');
     const [categories, setCategories] = useState([]);
     const [venues, setVenues] = useState([]);
@@ -46,10 +48,10 @@ const ManagementPage = () => {
         setActionLoading(true);
         const result = await createCategory(data, user);
         if (result.success) {
-            alert('Category added successfully!');
+            addToast('Category added successfully!', 'success');
             loadData();
         } else {
-            alert(result.error || 'Failed to add category');
+            addToast(result.error || 'Failed to add category', 'error');
         }
         setActionLoading(false);
     };
@@ -58,10 +60,10 @@ const ManagementPage = () => {
         setActionLoading(true);
         const result = await updateCategory(id, data, user);
         if (result.success) {
-            alert('Category updated successfully!');
+            addToast('Category updated successfully!', 'success');
             loadData();
         } else {
-            alert(result.error || 'Failed to update category');
+            addToast(result.error || 'Failed to update category', 'error');
         }
         setActionLoading(false);
     };
@@ -72,7 +74,7 @@ const ManagementPage = () => {
         if (result.success) {
             loadData();
         } else {
-            alert(result.error || 'Failed to update category status');
+            addToast(result.error || 'Failed to update category status', 'error');
         }
         setActionLoading(false);
     };
@@ -82,10 +84,10 @@ const ManagementPage = () => {
         setActionLoading(true);
         const result = await createVenue(data, user);
         if (result.success) {
-            alert('Venue added successfully!');
+            addToast('Venue added successfully!', 'success');
             loadData();
         } else {
-            alert(result.error || 'Failed to add venue');
+            addToast(result.error || 'Failed to add venue', 'error');
         }
         setActionLoading(false);
     };
@@ -94,10 +96,10 @@ const ManagementPage = () => {
         setActionLoading(true);
         const result = await updateVenue(id, data, user);
         if (result.success) {
-            alert('Venue updated successfully!');
+            addToast('Venue updated successfully!', 'success');
             loadData();
         } else {
-            alert(result.error || 'Failed to update venue');
+            addToast(result.error || 'Failed to update venue', 'error');
         }
         setActionLoading(false);
     };
@@ -108,7 +110,7 @@ const ManagementPage = () => {
         if (result.success) {
             loadData();
         } else {
-            alert(result.error || 'Failed to update venue status');
+            addToast(result.error || 'Failed to update venue status', 'error');
         }
         setActionLoading(false);
     };
