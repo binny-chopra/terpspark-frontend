@@ -43,9 +43,9 @@ export const login = async (email, password) => {
   //   // Generate mock token
     const token = data.token;
 
-  //   // Store auth data
+    //   // Store auth data
     setStorageItem(AUTH_TOKEN_KEY, token);
-  //   setStorageItem(USER_KEY, userWithoutPassword);
+    setStorageItem(USER_KEY, data.user);
 
     return {
       success: true,
@@ -56,6 +56,36 @@ export const login = async (email, password) => {
     return {
       success: false,
       error: 'An error occurred during login. Please try again.'
+    };
+  }
+};
+
+/**
+ * Register a new user
+ */
+export const register = async (payload) => {
+  try {
+    const res = await fetch(BACKEND_URL + '/api/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      return {
+        success: false,
+        error: data.detail || data.error || 'Registration failed. Please check your details.'
+      };
+    }
+
+    return { success: true, user: data.user };
+  } catch (error) {
+    return {
+      success: false,
+      error: 'An error occurred during registration. Please try again.'
     };
   }
 };
@@ -103,18 +133,8 @@ export const validateSession = async () => {
       return { valid: false };
     }
 
-    // In production, this would validate the token with the backend
-    // For now, we'll just check if it exists and is properly formatted
-    try {
-      const decoded = JSON.parse(atob(token));
-      if (decoded.userId && decoded.timestamp) {
-        return { valid: true, user };
-      }
-    } catch {
-      return { valid: false };
-    }
-
-    return { valid: false };
+    // In production, validate token server-side. Here, presence is enough.
+    return { valid: true, user };
   } catch {
     return { valid: false };
   }

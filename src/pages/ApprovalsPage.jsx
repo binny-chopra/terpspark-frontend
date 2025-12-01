@@ -13,9 +13,11 @@ import {
     approveEvent,
     rejectEvent
 } from '@services/adminService';
+import { useToast } from '@context/ToastContext';
 
 const ApprovalsPage = () => {
     const { user } = useAuth();
+    const { addToast } = useToast();
     const [activeTab, setActiveTab] = useState('organizers');
     const [pendingOrganizers, setPendingOrganizers] = useState([]);
     const [pendingEvents, setPendingEvents] = useState([]);
@@ -39,40 +41,40 @@ const ApprovalsPage = () => {
     const handleApproveOrganizer = async (requestId, notes) => {
         const result = await approveOrganizer(requestId, user, notes);
         if (result.success) {
-            alert('Organizer approved successfully!');
+            addToast('Organizer approved successfully!', 'success');
             loadData();
         } else {
-            alert(result.error || 'Failed to approve');
+            addToast(result.error || 'Failed to approve', 'error');
         }
     };
 
     const handleRejectOrganizer = async (requestId, notes) => {
         const result = await rejectOrganizer(requestId, user, notes);
         if (result.success) {
-            alert('Organizer request rejected');
+            addToast('Organizer request rejected', 'success');
             loadData();
         } else {
-            alert(result.error || 'Failed to reject');
+            addToast(result.error || 'Failed to reject', 'error');
         }
     };
 
     const handleApproveEvent = async (submissionId, notes) => {
         const result = await approveEvent(submissionId, user, notes);
         if (result.success) {
-            alert('Event approved and published!');
+            addToast('Event approved and published!', 'success');
             loadData();
         } else {
-            alert(result.error || 'Failed to approve');
+            addToast(result.error || 'Failed to approve', 'error');
         }
     };
 
     const handleRejectEvent = async (submissionId, notes) => {
         const result = await rejectEvent(submissionId, user, notes);
         if (result.success) {
-            alert('Event rejected');
+            addToast('Event rejected', 'success');
             loadData();
         } else {
-            alert(result.error || 'Failed to reject');
+            addToast(result.error || 'Failed to reject', 'error');
         }
     };
 

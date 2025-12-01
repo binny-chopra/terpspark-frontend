@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Calendar } from 'lucide-react';
 import { useAuth } from '@context/AuthContext';
 import { APP_NAME, APP_DESCRIPTION, ROUTES } from '@utils/constants';
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -30,7 +31,8 @@ const LoginPage = () => {
       return;
     }
 
-    if (!email.endsWith('@umd.edu')) {
+    const allowedDomains = ['@umd.edu', '@terpmail.umd.edu'];
+    if (!allowedDomains.some((domain) => email.endsWith(domain))) {
       setError('Please use a valid UMD email address');
       return;
     }
@@ -113,16 +115,25 @@ const LoginPage = () => {
               </div>
             )}
 
-            <button
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className={`w-full py-3 rounded-lg font-semibold transition-colors ${isLoading
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-red-600 text-white hover:bg-red-700'
-                }`}
-            >
-              {isLoading ? 'Signing in...' : 'Sign In with SSO'}
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className={`flex-1 py-3 rounded-lg font-semibold transition-colors ${isLoading
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                  }`}
+              >
+                {isLoading ? 'Signing in...' : 'Sign In'}
+              </button>
+              <button
+                onClick={() => navigate('/register')}
+                disabled={isLoading}
+                className="flex-1 py-3 rounded-lg font-semibold border border-red-600 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+              >
+                Sign Up
+              </button>
+            </div>
           </div>
 
           {/* Quick Login */}
@@ -154,9 +165,7 @@ const LoginPage = () => {
           </div>
         </div>
 
-        <p className="text-center text-sm text-gray-600 mt-4">
-          Protected by University SSO & Duo Authentication
-        </p>
+        <div className="text-center text-sm text-gray-600 mt-4 space-y-2"></div>
       </div>
     </div>
   );
