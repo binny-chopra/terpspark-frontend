@@ -9,11 +9,13 @@ import EventDetailModal from '@components/events/EventDetailModal';
 import RegistrationModal from '@components/registration/RegistrationModal';
 import LoadingSpinner from '@components/common/LoadingSpinner';
 import { getAllEvents } from '@services/eventService';
-import { registerForEvent, checkRegistrationStatus } from '@services/registrationService';
+import { registerForEvent, checkRegistrationStatus, addToWaitlist } from '@services/registrationService';
+import { useToast } from '@context/ToastContext';
 import { isEventFull } from '@utils/eventUtils';
 
 const EventsPage = () => {
     const { user } = useAuth();
+    const { addToast } = useToast();
     const [events, setEvents] = useState([]);
     const [filteredEvents, setFilteredEvents] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -86,13 +88,13 @@ const EventsPage = () => {
         const status = await checkRegistrationStatus(user.id, event.id);
 
         if (status.isRegistered) {
-            alert('You are already registered for this event!');
+            addToast('You are already registered for this event!', 'info');
             setSelectedEvent(null);
             return;
         }
 
         if (status.isWaitlisted) {
-            alert('You are already on the waitlist for this event!');
+            addToast('You are already on the waitlist for this event!', 'info');
             setSelectedEvent(null);
             return;
         }
@@ -117,15 +119,18 @@ const EventsPage = () => {
     };
 
     const handleRegistrationSubmit = async (formData) => {
-        const result = await registerForEvent(user.id, registrationEvent.id, formData);
+        // Call the appropriate function based on whether this is waitlist or regular registration
+        const result = isWaitlistRegistration
+            ? await addToWaitlist(user.id, registrationEvent.id, formData)
+            : await registerForEvent(user.id, registrationEvent.id, formData);
 
         if (result.success) {
-            alert(result.message);
+            addToast(result.message, 'success');
             setShowRegistrationModal(false);
             setRegistrationEvent(null);
             loadEvents(); // Reload to update capacity
         } else {
-            alert(result.error || 'Registration failed. Please try again.');
+            addToast(result.error || 'Registration failed. Please try again.', 'error');
         }
     };
 
@@ -158,8 +163,8 @@ const EventsPage = () => {
                         <button
                             onClick={() => setViewMode('grid')}
                             className={`p-2 rounded transition-colors ${viewMode === 'grid'
-                                    ? 'bg-red-600 text-white'
-                                    : 'text-gray-600 hover:bg-gray-100'
+                                ? 'bg-red-600 text-white'
+                                : 'text-gray-600 hover:bg-gray-100'
                                 }`}
                             aria-label="Grid view"
                         >
@@ -168,8 +173,8 @@ const EventsPage = () => {
                         <button
                             onClick={() => setViewMode('list')}
                             className={`p-2 rounded transition-colors ${viewMode === 'list'
-                                    ? 'bg-red-600 text-white'
-                                    : 'text-gray-600 hover:bg-gray-100'
+                                ? 'bg-red-600 text-white'
+                                : 'text-gray-600 hover:bg-gray-100'
                                 }`}
                             aria-label="List view"
                         >
@@ -233,6 +238,7 @@ const EventsPage = () => {
                     event={selectedEvent}
                     onClose={handleCloseModal}
                     onRegister={handleRegister}
+                    user={user}
                 />
             )}
 

@@ -164,7 +164,7 @@ export const getEventStatusBadge = (event) => {
 
 /**
  * Get category color
- * @param {string} category 
+ * @param {string|object} category - Category slug string or category object
  * @returns {object} - Color classes
  */
 export const getCategoryColor = (category) => {
@@ -179,7 +179,10 @@ export const getCategoryColor = (category) => {
         environmental: { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-300' }
     };
 
-    return colors[category] || { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300' };
+    // Handle both string and object formats
+    const categorySlug = typeof category === 'object' ? category?.slug : category;
+
+    return colors[categorySlug] || { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300' };
 };
 
 /**

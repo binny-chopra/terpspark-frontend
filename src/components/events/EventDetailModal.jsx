@@ -10,7 +10,7 @@ import {
     isEventFull
 } from '@utils/eventUtils';
 
-const EventDetailModal = ({ event, onClose, onRegister }) => {
+const EventDetailModal = ({ event, onClose, onRegister, user }) => {
     if (!event) return null;
 
     const remaining = getRemainingCapacity(event.capacity, event.registeredCount);
@@ -18,6 +18,7 @@ const EventDetailModal = ({ event, onClose, onRegister }) => {
     const statusBadge = getEventStatusBadge(event);
     const categoryColor = getCategoryColor(event.category);
     const isFull = isEventFull(event.capacity, event.registeredCount);
+    const isAdminOrOrganizer = user?.role === 'admin' || user?.role === 'organizer';
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -27,7 +28,7 @@ const EventDetailModal = ({ event, onClose, onRegister }) => {
                     <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
                             <span className={`px-2 py-1 rounded text-xs font-medium ${categoryColor.bg} ${categoryColor.text}`}>
-                                {event.category}
+                                {typeof event.category === 'object' ? event.category.name : event.category}
                             </span>
                             <span className={`px-2 py-1 rounded text-xs font-medium ${statusBadge.color}`}>
                                 {statusBadge.label}
@@ -98,9 +99,9 @@ const EventDetailModal = ({ event, onClose, onRegister }) => {
                                         <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                             <div
                                                 className={`h-full transition-all ${percentage >= 90 ? 'bg-red-500' :
-                                                        percentage >= 70 ? 'bg-orange-500' :
-                                                            percentage >= 50 ? 'bg-yellow-500' :
-                                                                'bg-green-500'
+                                                    percentage >= 70 ? 'bg-orange-500' :
+                                                        percentage >= 50 ? 'bg-yellow-500' :
+                                                            'bg-green-500'
                                                     }`}
                                                 style={{ width: `${percentage}%` }}
                                             />
@@ -162,20 +163,22 @@ const EventDetailModal = ({ event, onClose, onRegister }) => {
 
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-3">
-                        {!isFull ? (
-                            <button
-                                onClick={() => onRegister(event)}
-                                className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
-                            >
-                                Register for Event
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => onRegister(event)}
-                                className="flex-1 px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-colors"
-                            >
-                                Join Waitlist
-                            </button>
+                        {onRegister && !isAdminOrOrganizer && (
+                            !isFull ? (
+                                <button
+                                    onClick={() => onRegister(event)}
+                                    className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
+                                >
+                                    Register for Event
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => onRegister(event)}
+                                    className="flex-1 px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-colors"
+                                >
+                                    Join Waitlist
+                                </button>
+                            )
                         )}
                         <button
                             onClick={onClose}

@@ -1,13 +1,116 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@context/AuthContext';
 import Header from '@components/layout/Header';
 import Navigation from '@components/layout/Navigation';
 import { USER_ROLES, ROUTES } from '@utils/constants';
+import { getAllEvents } from '@services/eventService';
+import { getUserRegistrations } from '@services/registrationService';
+import { getOrganizerEvents } from '@services/organizerService';
+import { fetchDashboardStats } from '@services/adminService';
 
 const DashboardPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [studentStats, setStudentStats] = useState({
+    upcoming: 0,
+    registrations: 0,
+    attended: 0
+  });
+  const [loadingStats, setLoadingStats] = useState(user?.role === USER_ROLES.STUDENT);
+  const [organizerStats, setOrganizerStats] = useState({
+    events: 0,
+    attendees: 0,
+    pending: 0
+  });
+  const [loadingOrganizerStats, setLoadingOrganizerStats] = useState(user?.role === USER_ROLES.ORGANIZER);
+  const [adminStats, setAdminStats] = useState({
+    totalEvents: 0,
+    pendingApprovals: 0,
+    activeOrganizers: 0
+  });
+  const [loadingAdminStats, setLoadingAdminStats] = useState(user?.role === USER_ROLES.ADMIN);
+
+  useEffect(() => {
+    const loadStudentStats = async () => {
+      if (user?.role !== USER_ROLES.STUDENT) return;
+      setLoadingStats(true);
+
+      const [eventsResult, regsResult] = await Promise.all([
+        getAllEvents(),
+        getUserRegistrations(user.id)
+      ]);
+
+      const now = new Date();
+      const upcoming = eventsResult.success
+        ? (eventsResult.events || []).filter(evt => {
+          const date = evt.date ? new Date(evt.date) : null;
+          return date && date >= now;
+        }).length
+        : 0;
+
+      const registrations = regsResult.success ? (regsResult.registrations || []) : [];
+      const attended = registrations.filter(reg =>
+        reg.checkInStatus === 'checked_in' || reg.status === 'attended'
+      ).length;
+
+      setStudentStats({
+        upcoming,
+        registrations: registrations.length,
+        attended
+      });
+      setLoadingStats(false);
+    };
+
+    loadStudentStats();
+  }, [user]);
+
+  useEffect(() => {
+    const loadOrganizerStats = async () => {
+      if (user?.role !== USER_ROLES.ORGANIZER && user?.role !== USER_ROLES.ADMIN) return;
+      setLoadingOrganizerStats(true);
+
+      const eventsResult = await getOrganizerEvents(user.id);
+      if (eventsResult.success) {
+        const events = eventsResult.events || [];
+        const publishedEvents = events.filter((e) => e.status === 'published');
+        const eventsCount = publishedEvents.length;
+        const pending = events.filter((e) => e.status === 'pending').length;
+        const attendees = publishedEvents.reduce((sum, e) => sum + (e.registeredCount || 0), 0);
+        setOrganizerStats({ events: eventsCount, attendees, pending });
+      }
+
+      setLoadingOrganizerStats(false);
+    };
+
+    loadOrganizerStats();
+  }, [user]);
+
+  useEffect(() => {
+    const loadAdminStats = async () => {
+      if (user?.role !== USER_ROLES.ADMIN) return;
+      setLoadingAdminStats(true);
+      const [dashboardResult, eventsResult] = await Promise.all([
+        fetchDashboardStats(),
+        getAllEvents()
+      ]);
+
+      const stats = dashboardResult.success ? (dashboardResult.stats || dashboardResult.data || {}) : {};
+      const publishedCount = eventsResult.success
+        ? (eventsResult.total ?? (eventsResult.events || []).length)
+        : 0;
+
+      setAdminStats({
+        totalEvents: publishedCount,
+        pendingApprovals: stats.totalPending || stats.pendingEvents || 0,
+        activeOrganizers: stats.activeOrganizers || 0
+      });
+
+      setLoadingAdminStats(false);
+    };
+
+    loadAdminStats();
+  }, [user]);
 
   const getRoleContent = () => {
     const content = {
@@ -15,9 +118,24 @@ const DashboardPage = () => {
         title: 'Welcome to TerpSpark',
         description: 'Discover and register for campus events',
         stats: [
-          { label: 'Upcoming Events', value: '24', color: 'bg-blue-50 text-blue-700', bgColor: 'bg-blue-500' },
-          { label: 'My Registrations', value: '3', color: 'bg-green-50 text-green-700', bgColor: 'bg-green-500' },
-          { label: 'Attended', value: '12', color: 'bg-purple-50 text-purple-700', bgColor: 'bg-purple-500' }
+          {
+            label: 'Upcoming Events',
+            value: loadingStats ? '...' : studentStats.upcoming,
+            color: 'bg-blue-50 text-blue-700',
+            bgColor: 'bg-blue-500'
+          },
+          {
+            label: 'My Registrations',
+            value: loadingStats ? '...' : studentStats.registrations,
+            color: 'bg-green-50 text-green-700',
+            bgColor: 'bg-green-500'
+          },
+          {
+            label: 'Attended',
+            value: loadingStats ? '...' : studentStats.attended,
+            color: 'bg-purple-50 text-purple-700',
+            bgColor: 'bg-purple-500'
+          }
         ],
         primaryAction: { label: 'Browse Events', path: ROUTES.EVENTS },
         secondaryAction: { label: 'View My Registrations', path: ROUTES.MY_REGISTRATIONS }
@@ -26,9 +144,24 @@ const DashboardPage = () => {
         title: 'Organizer Dashboard',
         description: 'Manage your events and attendees',
         stats: [
-          { label: 'My Events', value: '8', color: 'bg-blue-50 text-blue-700', bgColor: 'bg-blue-500' },
-          { label: 'Total Attendees', value: '156', color: 'bg-green-50 text-green-700', bgColor: 'bg-green-500' },
-          { label: 'Pending Approval', value: '2', color: 'bg-orange-50 text-orange-700', bgColor: 'bg-orange-500' }
+          {
+            label: 'My Events',
+            value: loadingOrganizerStats ? '...' : organizerStats.events,
+            color: 'bg-blue-50 text-blue-700',
+            bgColor: 'bg-blue-500'
+          },
+          {
+            label: 'Total Attendees',
+            value: loadingOrganizerStats ? '...' : organizerStats.attendees,
+            color: 'bg-green-50 text-green-700',
+            bgColor: 'bg-green-500'
+          },
+          {
+            label: 'Pending Approval',
+            value: loadingOrganizerStats ? '...' : organizerStats.pending,
+            color: 'bg-orange-50 text-orange-700',
+            bgColor: 'bg-orange-500'
+          }
         ],
         primaryAction: { label: 'Create New Event', path: ROUTES.CREATE_EVENT },
         secondaryAction: { label: 'View My Events', path: ROUTES.MY_EVENTS }
@@ -37,9 +170,24 @@ const DashboardPage = () => {
         title: 'Admin Dashboard',
         description: 'Oversee all campus events and activities',
         stats: [
-          { label: 'Total Events', value: '47', color: 'bg-blue-50 text-blue-700', bgColor: 'bg-blue-500' },
-          { label: 'Pending Approvals', value: '5', color: 'bg-orange-50 text-orange-700', bgColor: 'bg-orange-500' },
-          { label: 'Active Organizers', value: '23', color: 'bg-green-50 text-green-700', bgColor: 'bg-green-500' }
+          {
+            label: 'Total Events',
+            value: loadingAdminStats ? '...' : adminStats.totalEvents,
+            color: 'bg-blue-50 text-blue-700',
+            bgColor: 'bg-blue-500'
+          },
+          {
+            label: 'Pending Approvals',
+            value: loadingAdminStats ? '...' : adminStats.pendingApprovals,
+            color: 'bg-orange-50 text-orange-700',
+            bgColor: 'bg-orange-500'
+          },
+          {
+            label: 'Active Organizers',
+            value: loadingAdminStats ? '...' : adminStats.activeOrganizers,
+            color: 'bg-green-50 text-green-700',
+            bgColor: 'bg-green-500'
+          }
         ],
         primaryAction: { label: 'View Pending Approvals', path: ROUTES.APPROVALS },
         secondaryAction: { label: 'Manage Categories', path: ROUTES.MANAGEMENT }
@@ -98,31 +246,6 @@ const DashboardPage = () => {
             >
               {roleContent.secondaryAction.label}
             </button>
-          </div>
-        </div>
-
-        {/* Recent Activity (Placeholder) */}
-        <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Phase 2 features now available!</p>
-                  <p className="text-xs text-gray-500">Browse and discover campus events</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">8 new events published this week</p>
-                  <p className="text-xs text-gray-500">Check them out in Browse Events</p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </main>

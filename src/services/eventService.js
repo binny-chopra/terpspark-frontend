@@ -1,82 +1,94 @@
-import mockData from '@data/mockEvents.json';
+import { getAuthToken } from './authService';
+import { BACKEND_URL } from '../utils/constants';
+
+// Backend API base URL
+const API_BASE_URL = BACKEND_URL;
 
 /**
- * Simulates fetching all published events
- * In production, this would call GET /api/events
+ * Helper function to get authorization headers
+ */
+const getAuthHeaders = () => {
+    const token = getAuthToken();
+    const headers = {
+        'Content-Type': 'application/json',
+    };
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return headers;
+};
+
+/**
+ * Fetches all published events with optional filters
+ * Calls GET /api/events with query parameters
  */
 export const getAllEvents = async (filters = {}) => {
     try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // Build query parameters
+        const params = new URLSearchParams();
 
-        let filteredEvents = [...mockData.events];
-
-        // Filter by status (only published for students)
-        filteredEvents = filteredEvents.filter(event => event.status === 'published');
-
-        // Filter by search query
         if (filters.search) {
-            const searchLower = filters.search.toLowerCase();
-            filteredEvents = filteredEvents.filter(event =>
-                event.title.toLowerCase().includes(searchLower) ||
-                event.description.toLowerCase().includes(searchLower) ||
-                event.tags.some(tag => tag.toLowerCase().includes(searchLower))
-            );
+            params.append('search', filters.search);
         }
 
-        // Filter by category
         if (filters.category && filters.category !== 'all') {
-            filteredEvents = filteredEvents.filter(event =>
-                event.category === filters.category
-            );
+            params.append('category', filters.category);
         }
 
-        // Filter by organizer
         if (filters.organizer) {
-            filteredEvents = filteredEvents.filter(event =>
-                event.organizer.name.toLowerCase().includes(filters.organizer.toLowerCase())
-            );
+            params.append('organizer', filters.organizer);
         }
 
-        // Filter by date range
         if (filters.startDate) {
-            filteredEvents = filteredEvents.filter(event =>
-                new Date(event.date) >= new Date(filters.startDate)
-            );
+            params.append('startDate', filters.startDate);
         }
 
         if (filters.endDate) {
-            filteredEvents = filteredEvents.filter(event =>
-                new Date(event.date) <= new Date(filters.endDate)
-            );
+            params.append('endDate', filters.endDate);
         }
 
-        // Filter by availability
         if (filters.availableOnly) {
-            filteredEvents = filteredEvents.filter(event =>
-                event.registeredCount < event.capacity
-            );
+            params.append('availability', 'true');
         }
 
-        // Sort events
-        const sortBy = filters.sortBy || 'date';
-        filteredEvents.sort((a, b) => {
-            if (sortBy === 'date') {
-                return new Date(a.date) - new Date(b.date);
-            } else if (sortBy === 'title') {
-                return a.title.localeCompare(b.title);
-            } else if (sortBy === 'popular') {
-                return b.registeredCount - a.registeredCount;
-            }
-            return 0;
+        if (filters.sortBy) {
+            params.append('sortBy', filters.sortBy);
+        }
+
+        if (filters.page) {
+            params.append('page', filters.page);
+        }
+
+        if (filters.limit) {
+            params.append('limit', filters.limit);
+        }
+
+        const queryString = params.toString();
+        const url = `${API_BASE_URL}/api/events${queryString ? `?${queryString}` : ''}`;
+
+        const response = await fetch(url, {
+            headers: getAuthHeaders()
         });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                error: data.detail || data.error || 'Failed to fetch events. Please try again.'
+            };
+        }
 
         return {
             success: true,
-            events: filteredEvents,
-            total: filteredEvents.length
+            events: data.events || [],
+            total: data.pagination?.totalItems || data.events?.length || 0,
+            pagination: data.pagination
         };
     } catch (error) {
+        console.error('Error fetching events:', error);
         return {
             success: false,
             error: 'Failed to fetch events. Please try again.'
@@ -86,25 +98,29 @@ export const getAllEvents = async (filters = {}) => {
 
 /**
  * Get a single event by ID
+ * Calls GET /api/events/{event_id}
  */
 export const getEventById = async (eventId) => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`, {
+            headers: getAuthHeaders()
+        });
 
-        const event = mockData.events.find(e => e.id === parseInt(eventId));
+        const data = await response.json();
 
-        if (!event) {
+        if (!response.ok) {
             return {
                 success: false,
-                error: 'Event not found'
+                error: data.detail || data.error || 'Event not found'
             };
         }
 
         return {
             success: true,
-            event
+            event: data.event
         };
     } catch (error) {
+        console.error('Error fetching event:', error);
         return {
             success: false,
             error: 'Failed to fetch event details'
@@ -114,16 +130,29 @@ export const getEventById = async (eventId) => {
 
 /**
  * Get all categories
+ * Calls GET /api/categories
  */
 export const getCategories = async () => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        const response = await fetch(`${API_BASE_URL}/api/categories`, {
+            headers: getAuthHeaders()
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                error: data.detail || data.error || 'Failed to fetch categories'
+            };
+        }
 
         return {
             success: true,
-            categories: mockData.categories
+            categories: data.categories || []
         };
     } catch (error) {
+        console.error('Error fetching categories:', error);
         return {
             success: false,
             error: 'Failed to fetch categories'
@@ -133,14 +162,27 @@ export const getCategories = async () => {
 
 /**
  * Get featured events
+ * Calls GET /api/events and filters for featured events on client side
  */
 export const getFeaturedEvents = async () => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Fetch recent events and filter for featured ones
+        const response = await fetch(`${API_BASE_URL}/api/events?sortBy=date&limit=20`, {
+            headers: getAuthHeaders()
+        });
 
-        const featuredEvents = mockData.events
-            .filter(event => event.isFeatured && event.status === 'published')
-            .sort((a, b) => new Date(a.date) - new Date(b.date))
+        const data = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                error: data.detail || data.error || 'Failed to fetch featured events'
+            };
+        }
+
+        // Filter for featured events and take top 3
+        const featuredEvents = (data.events || [])
+            .filter(event => event.isFeatured)
             .slice(0, 3);
 
         return {
@@ -148,6 +190,7 @@ export const getFeaturedEvents = async () => {
             events: featuredEvents
         };
     } catch (error) {
+        console.error('Error fetching featured events:', error);
         return {
             success: false,
             error: 'Failed to fetch featured events'
@@ -157,27 +200,36 @@ export const getFeaturedEvents = async () => {
 
 /**
  * Get upcoming events (next 7 days)
+ * Calls GET /api/events with date range filter
  */
 export const getUpcomingEvents = async (limit = 5) => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 200));
-
         const today = new Date();
         const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-        const upcomingEvents = mockData.events
-            .filter(event => {
-                const eventDate = new Date(event.date);
-                return eventDate >= today && eventDate <= nextWeek && event.status === 'published';
-            })
-            .sort((a, b) => new Date(a.date) - new Date(b.date))
-            .slice(0, limit);
+        const startDate = today.toISOString().split('T')[0];
+        const endDate = nextWeek.toISOString().split('T')[0];
+
+        const response = await fetch(
+            `${API_BASE_URL}/api/events?startDate=${startDate}&endDate=${endDate}&sortBy=date&limit=${limit}`,
+            { headers: getAuthHeaders() }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return {
+                success: false,
+                error: data.detail || data.error || 'Failed to fetch upcoming events'
+            };
+        }
 
         return {
             success: true,
-            events: upcomingEvents
+            events: data.events || []
         };
     } catch (error) {
+        console.error('Error fetching upcoming events:', error);
         return {
             success: false,
             error: 'Failed to fetch upcoming events'
@@ -187,38 +239,34 @@ export const getUpcomingEvents = async (limit = 5) => {
 
 /**
  * Search events by query
+ * Calls GET /api/events with search parameter
  */
 export const searchEvents = async (query) => {
     try {
-        await new Promise(resolve => setTimeout(resolve, 300));
+        const url = query && query.trim() !== ''
+            ? `${API_BASE_URL}/api/events?search=${encodeURIComponent(query)}`
+            : `${API_BASE_URL}/api/events`;
 
-        if (!query || query.trim() === '') {
+        const response = await fetch(url, {
+            headers: getAuthHeaders()
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
             return {
-                success: true,
-                events: mockData.events.filter(e => e.status === 'published')
+                success: false,
+                error: data.detail || data.error || 'Search failed. Please try again.'
             };
         }
 
-        const searchLower = query.toLowerCase();
-        const results = mockData.events.filter(event => {
-            return (
-                event.status === 'published' &&
-                (
-                    event.title.toLowerCase().includes(searchLower) ||
-                    event.description.toLowerCase().includes(searchLower) ||
-                    event.organizer.name.toLowerCase().includes(searchLower) ||
-                    event.venue.toLowerCase().includes(searchLower) ||
-                    event.tags.some(tag => tag.toLowerCase().includes(searchLower))
-                )
-            );
-        });
-
         return {
             success: true,
-            events: results,
+            events: data.events || [],
             query
         };
     } catch (error) {
+        console.error('Error searching events:', error);
         return {
             success: false,
             error: 'Search failed. Please try again.'
@@ -226,15 +274,21 @@ export const searchEvents = async (query) => {
     }
 };
 
+/**
+ * Alternative function to get all categories
+ * Calls GET /api/categories
+ */
 export async function getAllCategories() {
     try {
-        const response = await fetch('/api/categories');
+        const response = await fetch(`${API_BASE_URL}/api/categories`, {
+            headers: getAuthHeaders()
+        });
         const data = await response.json();
 
         return {
             success: response.ok,
             data: data.categories || [],
-            error: data.error
+            error: data.detail || data.error
         };
     } catch (error) {
         console.error('Failed to load categories:', error);

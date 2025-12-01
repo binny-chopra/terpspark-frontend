@@ -119,12 +119,15 @@ const ApprovalCard = ({ item, type, onApprove, onReject }) => {
     }
 
     // Event type
+    const categoryLabel = typeof item.category === 'string'
+        ? item.category
+        : item.category?.name || 'Uncategorized';
     return (
         <>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
                 <div className="flex items-start justify-between mb-3">
                     <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded capitalize">
-                        {item.category}
+                        {categoryLabel}
                     </span>
                     <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded">
                         Pending Review
@@ -152,8 +155,8 @@ const ApprovalCard = ({ item, type, onApprove, onReject }) => {
                 </div>
                 <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                     <p className="text-xs text-gray-500 mb-1">Submitted by</p>
-                    <p className="text-sm font-medium text-gray-900">{item.organizer.name}</p>
-                    <p className="text-xs text-gray-600">{item.organizer.email}</p>
+                    <p className="text-sm font-medium text-gray-900">{item.organizer?.name || 'Unknown organizer'}</p>
+                    <p className="text-xs text-gray-600">{item.organizer?.email || 'N/A'}</p>
                     <p className="text-xs text-gray-500 mt-2">
                         Submitted: {new Date(item.submittedAt).toLocaleString()}
                     </p>

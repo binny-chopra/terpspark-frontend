@@ -1,6 +1,7 @@
 /**
  * Application-wide constants
  */
+export const BACKEND_URL = "https://terpspark-backend-production.up.railway.app"
 
 export const USER_ROLES = {
   STUDENT: 'student',

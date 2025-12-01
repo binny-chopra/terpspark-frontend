@@ -73,8 +73,8 @@ const Header = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* Phase 6: Notification Bell */}
-            <button
+            {/* Phase 6: Notification Bell - HIDDEN */}
+            {/* <button
               onClick={handleNotificationClick}
               className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label="Notifications"
@@ -85,7 +85,7 @@ const Header = () => {
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
-            </button>
+            </button> */}
 
             <div className="flex items-center space-x-3 px-3 py-1.5 bg-gray-50 rounded-lg">
               <User className="w-5 h-5 text-gray-600" />
@@ -109,8 +109,8 @@ const Header = () => {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center space-x-2">
-            {/* Phase 6: Mobile Notification Bell */}
-            <button
+            {/* Phase 6: Mobile Notification Bell - HIDDEN */}
+            {/* <button
               onClick={handleNotificationClick}
               className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label="Notifications"
@@ -121,7 +121,7 @@ const Header = () => {
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
-            </button>
+            </button> */}
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -145,8 +145,8 @@ const Header = () => {
                 </span>
               </div>
 
-              {/* Phase 6: Mobile Notifications Link */}
-              <button
+              {/* Phase 6: Mobile Notifications Link - HIDDEN */}
+              {/* <button
                 onClick={handleNotificationClick}
                 className="w-full flex items-center justify-between px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               >
@@ -159,7 +159,7 @@ const Header = () => {
                     {unreadCount}
                   </span>
                 )}
-              </button>
+              </button> */}
 
               <button
                 onClick={() => {

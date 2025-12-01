@@ -7,7 +7,7 @@ import {
     getCapacityPercentage
 } from '@utils/eventUtils';
 
-const OrganizerEventCard = ({ event, onEdit, onCancel, onDuplicate, onViewAttendees }) => {
+const OrganizerEventCard = ({ event, onEdit, onCancel, onDuplicate, onViewAttendees, onSendForApproval, onViewDetails }) => {
     const [showMenu, setShowMenu] = useState(false);
 
     const categoryColor = getCategoryColor(event.category);
@@ -27,14 +27,21 @@ const OrganizerEventCard = ({ event, onEdit, onCancel, onDuplicate, onViewAttend
     const canEdit = event.status === 'draft' || event.status === 'pending';
     const canCancel = event.status === 'published';
 
+    const handleCardClick = () => {
+        if (onViewDetails) onViewDetails(event);
+    };
+
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+        <div
+            className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+            onClick={handleCardClick}
+        >
             {/* Header */}
             <div className="p-5 border-b border-gray-100">
                 <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2 flex-wrap">
                         <span className={`px-2 py-1 rounded text-xs font-medium ${categoryColor.bg} ${categoryColor.text}`}>
-                            {event.category}
+                            {typeof event.category === 'object' ? event.category.name : event.category}
                         </span>
                         <span className={`px-2 py-1 rounded text-xs font-medium ${statusBadge.color}`}>
                             {statusBadge.label}
@@ -44,7 +51,7 @@ const OrganizerEventCard = ({ event, onEdit, onCancel, onDuplicate, onViewAttend
                     {/* Actions Menu */}
                     <div className="relative">
                         <button
-                            onClick={() => setShowMenu(!showMenu)}
+                            onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
                             className="p-1 hover:bg-gray-100 rounded transition-colors"
                         >
                             {showMenu ? <X className="w-5 h-5" /> : <MoreVertical className="w-5 h-5" />}
@@ -54,7 +61,8 @@ const OrganizerEventCard = ({ event, onEdit, onCancel, onDuplicate, onViewAttend
                             <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
                                 {canEdit && (
                                     <button
-                                        onClick={() => {
+                                        onClick={(e) => {
+                                            e.stopPropagation();
                                             onEdit(event.id);
                                             setShowMenu(false);
                                         }}
@@ -67,7 +75,8 @@ const OrganizerEventCard = ({ event, onEdit, onCancel, onDuplicate, onViewAttend
 
                                 {event.status === 'published' && (
                                     <button
-                                        onClick={() => {
+                                        onClick={(e) => {
+                                            e.stopPropagation();
                                             onViewAttendees(event.id);
                                             setShowMenu(false);
                                         }}
@@ -79,7 +88,8 @@ const OrganizerEventCard = ({ event, onEdit, onCancel, onDuplicate, onViewAttend
                                 )}
 
                                 <button
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                        e.stopPropagation();
                                         onDuplicate(event.id);
                                         setShowMenu(false);
                                     }}
@@ -93,7 +103,8 @@ const OrganizerEventCard = ({ event, onEdit, onCancel, onDuplicate, onViewAttend
                                     <>
                                         <div className="border-t border-gray-200 my-1"></div>
                                         <button
-                                            onClick={() => {
+                                            onClick={(e) => {
+                                                e.stopPropagation();
                                                 onCancel(event.id);
                                                 setShowMenu(false);
                                             }}
@@ -172,8 +183,18 @@ const OrganizerEventCard = ({ event, onEdit, onCancel, onDuplicate, onViewAttend
 
                 {/* Draft Message */}
                 {event.status === 'draft' && (
-                    <div className="p-3 bg-gray-50 border border-gray-200 rounded text-sm text-gray-600">
-                        Complete and submit for approval
+                    <div className="space-y-3">
+                        <div className="p-3 bg-gray-50 border border-gray-200 rounded text-sm text-gray-600">
+                            Complete and submit for approval
+                        </div>
+                        {onSendForApproval && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onSendForApproval(event); }}
+                                className="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+                            >
+                                Send for Approval
+                            </button>
+                        )}
                     </div>
                 )}
 

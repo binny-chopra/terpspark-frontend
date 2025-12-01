@@ -45,17 +45,32 @@ const AnalyticsPage = () => {
         );
     }
 
-    const { summary, byCategory, byMonth } = analytics;
+    const summary = {
+        totalEvents: 0,
+        totalRegistrations: 0,
+        totalAttendance: 0,
+        noShows: 0,
+        activeOrganizers: 0,
+        activeStudents: 0,
+        pendingApprovals: 0,
+        ...analytics.summary
+    };
+    const byCategory = analytics.byCategory || [];
+    const byMonth = analytics.byMonth || analytics.byDate || [];
     const attendanceRate = summary.totalRegistrations > 0
         ? ((summary.totalAttendance / summary.totalRegistrations) * 100).toFixed(1)
         : 0;
 
     // Prepare chart data
-    const monthlyData = byMonth.map(m => ({
-        name: m.month.split(' ')[0],
-        events: m.events,
-        registrations: m.registrations
-    }));
+    const monthlyData = byMonth.map(m => {
+        const label = m.month || m.date || '';
+        const name = label.includes(' ') ? label.split(' ')[0] : label;
+        return {
+            name,
+            events: m.events ?? m.count ?? 0,
+            registrations: m.registrations ?? m.totalRegistrations ?? 0
+        };
+    });
 
     const attendancePieData = [
         { name: 'Attended', value: summary.totalAttendance },
@@ -228,13 +243,13 @@ const AnalyticsPage = () => {
                             <div className="flex items-center justify-between">
                                 <span className="text-gray-600">Avg Registrations/Event</span>
                                 <span className="font-semibold text-gray-900">
-                                    {(summary.totalRegistrations / summary.totalEvents).toFixed(1)}
+                                    {summary.totalEvents ? (summary.totalRegistrations / summary.totalEvents).toFixed(1) : 0}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-gray-600">Avg Attendance/Event</span>
                                 <span className="font-semibold text-gray-900">
-                                    {(summary.totalAttendance / summary.totalEvents).toFixed(1)}
+                                    {summary.totalEvents ? (summary.totalAttendance / summary.totalEvents).toFixed(1) : 0}
                                 </span>
                             </div>
                         </div>
@@ -250,7 +265,7 @@ const AnalyticsPage = () => {
                             </div>
                             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                                 <p className="text-sm text-blue-800">
-                                    <strong>{byCategory.reduce((max, c) => c.events > max.events ? c : max, byCategory[0])?.category}</strong> is the most popular category with the most events.
+                                    <strong>{byCategory.length ? byCategory.reduce((max, c) => c.events > max.events ? c : max, byCategory[0])?.category : 'N/A'}</strong> is the most popular category with the most events.
                                 </p>
                             </div>
                             <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">

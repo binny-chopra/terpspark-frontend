@@ -1,386 +1,365 @@
-import mockAdmin from '@data/mockAdmin.json';
-import mockEvents from '@data/mockEvents.json';
-import { getStorageItem, setStorageItem } from '@utils/storage';
+import { getAuthToken } from './authService';
+import { BACKEND_URL } from '../utils/constants';
 
-const PENDING_ORGANIZERS_KEY = 'terpspark_pending_organizers';
-const PENDING_EVENTS_KEY = 'terpspark_pending_events';
-const AUDIT_LOGS_KEY = 'terpspark_audit_logs';
-const CATEGORIES_KEY = 'terpspark_categories';
-const VENUES_KEY = 'terpspark_venues';
-
-// Initialize data from storage or mock
-const getPendingOrganizers = () => {
-    const stored = getStorageItem(PENDING_ORGANIZERS_KEY);
-    return stored || [...mockAdmin.pendingOrganizers];
-};
-
-const getPendingEvents = () => {
-    const stored = getStorageItem(PENDING_EVENTS_KEY);
-    return stored || [...mockAdmin.pendingEvents];
-};
-
-const getAuditLogs = () => {
-    const stored = getStorageItem(AUDIT_LOGS_KEY);
-    return stored || [...mockAdmin.auditLogs];
-};
-
-const getCategories = () => {
-    const stored = getStorageItem(CATEGORIES_KEY);
-    return stored || [...mockEvents.categories];
-};
-
-const getVenues = () => {
-    const stored = getStorageItem(VENUES_KEY);
-    return stored || [...mockEvents.venues];
-};
-
-// Save functions
-const savePendingOrganizers = (data) => setStorageItem(PENDING_ORGANIZERS_KEY, data);
-const savePendingEvents = (data) => setStorageItem(PENDING_EVENTS_KEY, data);
-const saveAuditLogs = (data) => setStorageItem(AUDIT_LOGS_KEY, data);
-const saveCategories = (data) => setStorageItem(CATEGORIES_KEY, data);
-const saveVenues = (data) => setStorageItem(VENUES_KEY, data);
-
-// Log audit action
-const logAuditAction = (action, actor, target, details) => {
-    const logs = getAuditLogs();
-    const newLog = {
-        id: Date.now(),
-        timestamp: new Date().toISOString(),
-        action,
-        actor: { id: actor.id, name: actor.name, role: actor.role },
-        target,
-        details,
-        ipAddress: '192.168.1.100'
+const authHeaders = (includeJson = false) => {
+    const token = getAuthToken();
+    return {
+        ...(includeJson ? { 'Content-Type': 'application/json' } : {}),
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        Role: 'admin'
     };
-    logs.unshift(newLog);
-    saveAuditLogs(logs);
-    return newLog;
+};
+
+const parseResponse = async (response) => {
+    const contentType = response.headers.get('content-type') || '';
+    const payload = contentType.includes('application/json')
+        ? await response.json()
+        : await response.text();
+
+    if (!response.ok) {
+        return {
+            ok: false,
+            error: payload?.detail || payload?.error || payload?.message || response.statusText
+        };
+    }
+
+    return { ok: true, data: payload };
 };
 
 // ORGANIZER APPROVALS
-export const fetchPendingOrganizers = async () => {
-    await new Promise(r => setTimeout(r, 300));
-    const organizers = getPendingOrganizers().filter(o => o.status === 'pending');
-    return { success: true, requests: organizers };
-};
+export const fetchPendingOrganizers = async (status = 'pending') => {
+    const params = new URLSearchParams();
+    if (status && status !== 'pending') params.append('status', status);
 
-export const approveOrganizer = async (requestId, adminUser, notes = '') => {
-    await new Promise(r => setTimeout(r, 400));
-    const organizers = getPendingOrganizers();
-    const idx = organizers.findIndex(o => o.id === requestId);
-    if (idx === -1) return { success: false, error: 'Request not found' };
-
-    organizers[idx].status = 'approved';
-    organizers[idx].approvedAt = new Date().toISOString();
-    organizers[idx].approvedBy = adminUser.id;
-    organizers[idx].notes = notes;
-    savePendingOrganizers(organizers);
-
-    logAuditAction('ORGANIZER_APPROVED', adminUser,
-        { type: 'user', id: organizers[idx].userId, name: organizers[idx].name },
-        `Organizer approved. Notes: ${notes || 'None'}`
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/approvals/organizers${params.toString() ? `?${params}` : ''}`,
+        { method: 'GET', headers: authHeaders() }
     );
 
-    return { success: true, message: 'Organizer approved successfully' };
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
+
+    return { success: true, requests: result.data.requests || [] };
 };
 
-export const rejectOrganizer = async (requestId, adminUser, notes) => {
-    await new Promise(r => setTimeout(r, 400));
+export const approveOrganizer = async (requestId, _adminUser, notes = '') => {
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/approvals/organizers/${requestId}/approve`,
+        {
+            method: 'POST',
+            headers: authHeaders(true),
+            body: JSON.stringify({ notes })
+        }
+    );
+
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
+
+    return { success: true, message: result.data.message || 'Organizer approved successfully' };
+};
+
+export const rejectOrganizer = async (requestId, _adminUser, notes) => {
     if (!notes?.trim()) return { success: false, error: 'Rejection notes required' };
 
-    const organizers = getPendingOrganizers();
-    const idx = organizers.findIndex(o => o.id === requestId);
-    if (idx === -1) return { success: false, error: 'Request not found' };
-
-    organizers[idx].status = 'rejected';
-    organizers[idx].rejectedAt = new Date().toISOString();
-    organizers[idx].rejectedBy = adminUser.id;
-    organizers[idx].notes = notes;
-    savePendingOrganizers(organizers);
-
-    logAuditAction('ORGANIZER_REJECTED', adminUser,
-        { type: 'user', id: organizers[idx].userId, name: organizers[idx].name },
-        `Organizer rejected. Reason: ${notes}`
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/approvals/organizers/${requestId}/reject`,
+        {
+            method: 'POST',
+            headers: authHeaders(true),
+            body: JSON.stringify({ notes })
+        }
     );
 
-    return { success: true, message: 'Organizer request rejected' };
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
+
+    return { success: true, message: result.data.message || 'Organizer request rejected' };
 };
 
 // EVENT APPROVALS
 export const fetchPendingEvents = async () => {
-    await new Promise(r => setTimeout(r, 300));
-    const events = getPendingEvents().filter(e => e.status === 'pending');
-    return { success: true, events };
-};
-
-export const approveEvent = async (submissionId, adminUser, notes = '') => {
-    await new Promise(r => setTimeout(r, 400));
-    const events = getPendingEvents();
-    const idx = events.findIndex(e => e.id === submissionId);
-    if (idx === -1) return { success: false, error: 'Event not found' };
-
-    events[idx].status = 'approved';
-    events[idx].approvedAt = new Date().toISOString();
-    events[idx].approvedBy = adminUser.id;
-    events[idx].notes = notes;
-    savePendingEvents(events);
-
-    logAuditAction('EVENT_APPROVED', adminUser,
-        { type: 'event', id: events[idx].eventId, name: events[idx].title },
-        `Event approved and published. Notes: ${notes || 'None'}`
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/approvals/events`,
+        { method: 'GET', headers: authHeaders() }
     );
 
-    return { success: true, message: 'Event approved and published' };
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
+
+    return { success: true, events: result.data.events || [] };
 };
 
-export const rejectEvent = async (submissionId, adminUser, notes) => {
-    await new Promise(r => setTimeout(r, 400));
+export const approveEvent = async (submissionId, _adminUser, notes = '') => {
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/approvals/events/${submissionId}/approve`,
+        {
+            method: 'POST',
+            headers: authHeaders(true),
+            body: JSON.stringify({ notes })
+        }
+    );
+
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
+
+    return { success: true, message: result.data.message || 'Event approved and published' };
+};
+
+export const rejectEvent = async (submissionId, _adminUser, notes) => {
     if (!notes?.trim()) return { success: false, error: 'Rejection notes required' };
 
-    const events = getPendingEvents();
-    const idx = events.findIndex(e => e.id === submissionId);
-    if (idx === -1) return { success: false, error: 'Event not found' };
-
-    events[idx].status = 'rejected';
-    events[idx].rejectedAt = new Date().toISOString();
-    events[idx].rejectedBy = adminUser.id;
-    events[idx].notes = notes;
-    savePendingEvents(events);
-
-    logAuditAction('EVENT_REJECTED', adminUser,
-        { type: 'event', id: events[idx].eventId, name: events[idx].title },
-        `Event rejected. Reason: ${notes}`
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/approvals/events/${submissionId}/reject`,
+        {
+            method: 'POST',
+            headers: authHeaders(true),
+            body: JSON.stringify({ notes })
+        }
     );
 
-    return { success: true, message: 'Event rejected' };
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
+
+    return { success: true, message: result.data.message || 'Event rejected' };
 };
 
 // CATEGORY MANAGEMENT
 export const fetchCategories = async () => {
-    await new Promise(r => setTimeout(r, 200));
-    return { success: true, categories: getCategories() };
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/categories`,
+        { method: 'GET', headers: authHeaders() }
+    );
+
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
+
+    return { success: true, categories: result.data.categories || [] };
 };
 
-export const createCategory = async (categoryData, adminUser) => {
-    await new Promise(r => setTimeout(r, 300));
-    const categories = getCategories();
+export const createCategory = async (categoryData, _adminUser) => {
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/categories`,
+        {
+            method: 'POST',
+            headers: authHeaders(true),
+            body: JSON.stringify(categoryData)
+        }
+    );
 
-    if (categories.some(c => c.slug === categoryData.slug)) {
-        return { success: false, error: 'Category slug already exists' };
-    }
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
 
-    const newCategory = {
-        id: Date.now(),
-        name: categoryData.name,
-        slug: categoryData.slug || categoryData.name.toLowerCase().replace(/\s+/g, '-'),
-        description: categoryData.description || '',
-        color: categoryData.color || 'gray',
-        isActive: true,
-        createdAt: new Date().toISOString()
+    return {
+        success: true,
+        category: result.data.category,
+        message: result.data.message || 'Category created successfully'
     };
-
-    categories.push(newCategory);
-    saveCategories(categories);
-
-    logAuditAction('CATEGORY_CREATED', adminUser,
-        { type: 'category', id: newCategory.id, name: newCategory.name },
-        `New category created: ${newCategory.name}`
-    );
-
-    return { success: true, category: newCategory };
 };
 
-export const updateCategory = async (categoryId, updates, adminUser) => {
-    await new Promise(r => setTimeout(r, 300));
-    const categories = getCategories();
-    const idx = categories.findIndex(c => c.id === categoryId);
-    if (idx === -1) return { success: false, error: 'Category not found' };
-
-    categories[idx] = { ...categories[idx], ...updates, updatedAt: new Date().toISOString() };
-    saveCategories(categories);
-
-    logAuditAction('CATEGORY_UPDATED', adminUser,
-        { type: 'category', id: categoryId, name: categories[idx].name },
-        `Category updated: ${Object.keys(updates).join(', ')}`
+export const updateCategory = async (categoryId, updates, _adminUser) => {
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/categories/${categoryId}`,
+        {
+            method: 'PUT',
+            headers: authHeaders(true),
+            body: JSON.stringify(updates)
+        }
     );
 
-    return { success: true, category: categories[idx] };
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
+
+    return {
+        success: true,
+        category: result.data.category,
+        message: result.data.message || 'Category updated successfully'
+    };
 };
 
-export const retireCategory = async (categoryId, adminUser) => {
-    await new Promise(r => setTimeout(r, 300));
-    const categories = getCategories();
-    const idx = categories.findIndex(c => c.id === categoryId);
-    if (idx === -1) return { success: false, error: 'Category not found' };
-
-    categories[idx].isActive = !categories[idx].isActive;
-    saveCategories(categories);
-
-    const action = categories[idx].isActive ? 'CATEGORY_REACTIVATED' : 'CATEGORY_RETIRED';
-    logAuditAction(action, adminUser,
-        { type: 'category', id: categoryId, name: categories[idx].name },
-        `Category ${categories[idx].isActive ? 'reactivated' : 'retired'}`
+export const retireCategory = async (categoryId, _adminUser) => {
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/categories/${categoryId}`,
+        { method: 'DELETE', headers: authHeaders() }
     );
 
-    return { success: true, category: categories[idx] };
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
+
+    return { success: true, message: result.data.message || 'Category retired successfully' };
 };
 
 // VENUE MANAGEMENT
 export const fetchVenues = async () => {
-    await new Promise(r => setTimeout(r, 200));
-    return { success: true, venues: getVenues() };
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/venues`,
+        { method: 'GET', headers: authHeaders() }
+    );
+
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
+
+    return { success: true, venues: result.data.venues || [] };
 };
 
-export const createVenue = async (venueData, adminUser) => {
-    await new Promise(r => setTimeout(r, 300));
-    const venues = getVenues();
+export const createVenue = async (venueData, _adminUser) => {
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/venues`,
+        {
+            method: 'POST',
+            headers: authHeaders(true),
+            body: JSON.stringify(venueData)
+        }
+    );
 
-    const newVenue = {
-        id: Date.now(),
-        name: venueData.name,
-        building: venueData.building || venueData.name,
-        capacity: venueData.capacity || 100,
-        facilities: venueData.facilities || [],
-        isActive: true,
-        createdAt: new Date().toISOString()
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
+
+    return {
+        success: true,
+        venue: result.data.venue,
+        message: result.data.message || 'Venue created successfully'
     };
-
-    venues.push(newVenue);
-    saveVenues(venues);
-
-    logAuditAction('VENUE_CREATED', adminUser,
-        { type: 'venue', id: newVenue.id, name: newVenue.name },
-        `New venue created: ${newVenue.name}`
-    );
-
-    return { success: true, venue: newVenue };
 };
 
-export const updateVenue = async (venueId, updates, adminUser) => {
-    await new Promise(r => setTimeout(r, 300));
-    const venues = getVenues();
-    const idx = venues.findIndex(v => v.id === venueId);
-    if (idx === -1) return { success: false, error: 'Venue not found' };
-
-    venues[idx] = { ...venues[idx], ...updates, updatedAt: new Date().toISOString() };
-    saveVenues(venues);
-
-    logAuditAction('VENUE_UPDATED', adminUser,
-        { type: 'venue', id: venueId, name: venues[idx].name },
-        `Venue updated: ${Object.keys(updates).join(', ')}`
+export const updateVenue = async (venueId, updates, _adminUser) => {
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/venues/${venueId}`,
+        {
+            method: 'PUT',
+            headers: authHeaders(true),
+            body: JSON.stringify(updates)
+        }
     );
 
-    return { success: true, venue: venues[idx] };
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
+
+    return {
+        success: true,
+        venue: result.data.venue,
+        message: result.data.message || 'Venue updated successfully'
+    };
 };
 
-export const retireVenue = async (venueId, adminUser) => {
-    await new Promise(r => setTimeout(r, 300));
-    const venues = getVenues();
-    const idx = venues.findIndex(v => v.id === venueId);
-    if (idx === -1) return { success: false, error: 'Venue not found' };
-
-    venues[idx].isActive = !venues[idx].isActive;
-    saveVenues(venues);
-
-    const action = venues[idx].isActive ? 'VENUE_REACTIVATED' : 'VENUE_RETIRED';
-    logAuditAction(action, adminUser,
-        { type: 'venue', id: venueId, name: venues[idx].name },
-        `Venue ${venues[idx].isActive ? 'reactivated' : 'retired'}`
+export const retireVenue = async (venueId, _adminUser) => {
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/venues/${venueId}`,
+        { method: 'DELETE', headers: authHeaders() }
     );
 
-    return { success: true, venue: venues[idx] };
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
+
+    return { success: true, message: result.data.message || 'Venue retired successfully' };
 };
 
 // AUDIT LOGS
 export const fetchAuditLogs = async (filters = {}) => {
-    await new Promise(r => setTimeout(r, 300));
-    let logs = getAuditLogs();
+    const params = new URLSearchParams();
+    if (filters.action && filters.action !== 'all') params.append('action', filters.action);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.search) params.append('search', filters.search);
+    if (filters.userId) params.append('userId', filters.userId);
+    if (filters.page) params.append('page', filters.page);
+    if (filters.limit) params.append('limit', filters.limit);
 
-    if (filters.action && filters.action !== 'all') {
-        logs = logs.filter(l => l.action === filters.action);
-    }
-    if (filters.startDate) {
-        logs = logs.filter(l => new Date(l.timestamp) >= new Date(filters.startDate));
-    }
-    if (filters.endDate) {
-        logs = logs.filter(l => new Date(l.timestamp) <= new Date(filters.endDate));
-    }
-    if (filters.search) {
-        const s = filters.search.toLowerCase();
-        logs = logs.filter(l =>
-            l.actor?.name?.toLowerCase().includes(s) ||
-            l.target?.name?.toLowerCase().includes(s) ||
-            l.details?.toLowerCase().includes(s)
-        );
-    }
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/audit-logs${params.toString() ? `?${params}` : ''}`,
+        { method: 'GET', headers: authHeaders() }
+    );
 
-    logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    return { success: true, logs, total: logs.length };
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
+
+    return {
+        success: true,
+        logs: result.data.logs || [],
+        pagination: result.data.pagination
+    };
 };
 
-export const exportAuditLogs = (logs) => {
-    const headers = ['Timestamp', 'Action', 'Actor', 'Target', 'Details'];
-    const rows = logs.map(l => [
-        new Date(l.timestamp).toLocaleString(),
-        l.action,
-        l.actor?.name || 'System',
-        l.target?.name || 'N/A',
-        l.details
-    ]);
-    const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+export const exportAuditLogs = async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.action && filters.action !== 'all') params.append('action', filters.action);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.search) params.append('search', filters.search);
+
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/audit-logs/export${params.toString() ? `?${params}` : ''}`,
+        { method: 'GET', headers: authHeaders() }
+    );
+
+    const contentType = response.headers.get('content-type') || '';
+    const data = contentType.includes('text/csv') ? await response.text() : await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        return { success: false, error: data?.detail || data?.error || data?.message || 'Failed to export logs' };
+    }
+
+    const blob = new Blob([contentType.includes('text/csv') ? data : JSON.stringify(data)], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `audit_logs_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     window.URL.revokeObjectURL(url);
+
+    return { success: true };
 };
 
 // ANALYTICS
 export const fetchAnalytics = async () => {
-    await new Promise(r => setTimeout(r, 400));
-    return { success: true, analytics: mockAdmin.analytics };
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/analytics`,
+        { method: 'GET', headers: authHeaders() }
+    );
+
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
+
+    return { success: true, analytics: result.data.analytics || result.data };
 };
 
-export const exportAnalytics = (analytics) => {
-    const summary = analytics.summary;
-    const rows = [
-        ['Metric', 'Value'],
-        ['Total Events', summary.totalEvents],
-        ['Total Registrations', summary.totalRegistrations],
-        ['Total Attendance', summary.totalAttendance],
-        ['No Shows', summary.noShows],
-        ['Attendance Rate', `${((summary.totalAttendance / summary.totalRegistrations) * 100).toFixed(1)}%`],
-        ['Active Organizers', summary.activeOrganizers],
-        ['', ''],
-        ['Category', 'Events', 'Registrations', 'Attendance'],
-        ...analytics.byCategory.map(c => [c.category, c.events, c.registrations, c.attendance])
-    ];
-    const csv = rows.map(r => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+export const exportAnalytics = async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.category) params.append('category', filters.category);
+
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/analytics/export${params.toString() ? `?${params}` : ''}`,
+        { method: 'GET', headers: authHeaders() }
+    );
+
+    const contentType = response.headers.get('content-type') || '';
+    const data = contentType.includes('text/csv') ? await response.text() : await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        return { success: false, error: data?.detail || data?.error || data?.message || 'Failed to export analytics' };
+    }
+
+    const blob = new Blob([contentType.includes('text/csv') ? data : JSON.stringify(data)], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `analytics_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     window.URL.revokeObjectURL(url);
+
+    return { success: true };
 };
 
 // DASHBOARD STATS
 export const fetchDashboardStats = async () => {
-    await new Promise(r => setTimeout(r, 200));
-    const pendingOrg = getPendingOrganizers().filter(o => o.status === 'pending').length;
-    const pendingEvt = getPendingEvents().filter(e => e.status === 'pending').length;
+    const response = await fetch(
+        `${BACKEND_URL}/api/admin/dashboard`,
+        { method: 'GET', headers: authHeaders() }
+    );
 
-    return {
-        success: true,
-        stats: {
-            pendingOrganizers: pendingOrg,
-            pendingEvents: pendingEvt,
-            totalPending: pendingOrg + pendingEvt,
-            ...mockAdmin.analytics.summary
-        }
-    };
+    const result = await parseResponse(response);
+    if (!result.ok) return { success: false, error: result.error };
+
+    return { success: true, stats: result.data.stats || result.data };
 };

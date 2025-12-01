@@ -756,7 +756,7 @@ organizerService.js
 
 1. **Required Fields Validation**
    - Title: 3-100 characters
-   - Description: Minimum 50 characters
+   - Description: Required
    - Category: Must be from approved list
    - Date: Must be future date
    - Times: Start and end required
