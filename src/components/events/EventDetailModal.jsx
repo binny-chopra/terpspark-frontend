@@ -18,7 +18,7 @@ const EventDetailModal = ({ event, onClose, onRegister, user }) => {
     const statusBadge = getEventStatusBadge(event);
     const categoryColor = getCategoryColor(event.category);
     const isFull = isEventFull(event.capacity, event.registeredCount);
-    const isAdmin = user?.role === 'admin';
+    const isAdminOrOrganizer = user?.role === 'admin' || user?.role === 'organizer';
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -163,7 +163,7 @@ const EventDetailModal = ({ event, onClose, onRegister, user }) => {
 
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-3">
-                        {onRegister && !isAdmin && (
+                        {onRegister && !isAdminOrOrganizer && (
                             !isFull ? (
                                 <button
                                     onClick={() => onRegister(event)}
