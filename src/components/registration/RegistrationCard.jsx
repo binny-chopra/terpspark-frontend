@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Calendar, MapPin, Clock, Users, QrCode, Download, X, AlertCircle } from 'lucide-react';
 import {
     formatEventDate,
@@ -7,9 +7,12 @@ import {
     isEventPast,
     getDaysUntilEvent
 } from '@utils/eventUtils';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 const RegistrationCard = ({ registration, onCancel, onViewTicket }) => {
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+    const ticketRef = useRef(null);
     const { event } = registration;
 
     if (!event) return null;
@@ -17,6 +20,94 @@ const RegistrationCard = ({ registration, onCancel, onViewTicket }) => {
     const categoryColor = getCategoryColor(event.category);
     const isPast = isEventPast(event.date, event.endTime);
     const daysUntil = getDaysUntilEvent(event.date);
+
+    const handleDownload = async () => {
+        try {
+            // Create a temporary container with ticket content
+            const ticketContent = document.createElement('div');
+            ticketContent.style.padding = '40px';
+            ticketContent.style.backgroundColor = '#ffffff';
+            ticketContent.style.width = '600px';
+            ticketContent.innerHTML = `
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h2 style="font-size: 24px; font-weight: bold; color: #111827; margin-bottom: 8px;">Your Ticket</h2>
+                    <h3 style="font-size: 20px; font-weight: bold; color: #111827; margin-bottom: 8px;">${event.title}</h3>
+                    <p style="font-size: 14px; color: #6b7280;">${event.venue}</p>
+                </div>
+                
+                <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                    <div style="border: 4px solid #dc2626; border-radius: 8px; padding: 16px; background: white;">
+                        <img src="${registration.qrCode}" alt="QR Code" style="width: 200px; height: 200px; display: block;" />
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <p style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Ticket Code</p>
+                    <p style="font-family: monospace; font-size: 18px; font-weight: bold; color: #111827;">${registration.ticketCode}</p>
+                </div>
+                
+                <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="margin-bottom: 16px;">
+                        <p style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Date</p>
+                        <p style="font-size: 14px; font-weight: 500; color: #111827;">${formatEventDate(event.date)}</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <p style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Time</p>
+                        <p style="font-size: 14px; font-weight: 500; color: #111827;">${formatTimeRange(event.startTime, event.endTime)}</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <p style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Location</p>
+                        <p style="font-size: 14px; font-weight: 500; color: #111827;">${event.venue}</p>
+                    </div>
+                    
+                    <div>
+                        <p style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Organizer</p>
+                        <p style="font-size: 14px; font-weight: 500; color: #111827;">${event.organizer.name}</p>
+                    </div>
+                </div>
+                
+                <div style="background-color: #fef3c7; padding: 16px; border-radius: 8px; border: 1px solid #fbbf24;">
+                    <p style="font-size: 14px; font-weight: 500; color: #92400e; margin-bottom: 8px;">Check-in Instructions</p>
+                    <ul style="font-size: 14px; color: #92400e; margin: 0; padding-left: 20px;">
+                        <li>Show this QR code at the event entrance</li>
+                        <li>Arrive 15 minutes early for smooth check-in</li>
+                        <li>Bring a valid student ID</li>
+                        <li>Guests must check in with you</li>
+                    </ul>
+                </div>
+            `;
+
+            document.body.appendChild(ticketContent);
+
+            const canvas = await html2canvas(ticketContent, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                logging: false
+            });
+
+            document.body.removeChild(ticketContent);
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const imgWidth = 190;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            const x = (pdf.internal.pageSize.getWidth() - imgWidth) / 2;
+            const y = 10;
+
+            pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+            pdf.save(`ticket-${registration.ticketCode}.pdf`);
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            alert('Failed to download ticket. Please try again.');
+        }
+    };
 
     const getStatusBadge = () => {
         if (registration.status === 'cancelled') {
@@ -135,7 +226,7 @@ const RegistrationCard = ({ registration, onCancel, onViewTicket }) => {
                         </button>
                         <button
                             className="flex items-center justify-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                            onClick={() => alert('Download ticket feature will be implemented with backend')}
+                            onClick={handleDownload}
                         >
                             <Download className="w-4 h-4" />
                             <span>Download</span>

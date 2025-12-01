@@ -220,31 +220,6 @@ const RegistrationModal = ({ event, onClose, onSubmit, isWaitlist = false }) => 
                         </div>
                     )}
 
-                    {/* Notification Preference */}
-                    <div className="mb-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                            <Mail className="w-5 h-5 mr-2" />
-                            Notification Preferences
-                        </h3>
-
-                        <div className="space-y-2">
-                            <label className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                                <input
-                                    type="radio"
-                                    name="notification"
-                                    value="email"
-                                    checked={formData.notificationPreference === 'email'}
-                                    onChange={(e) => setFormData({ ...formData, notificationPreference: e.target.value })}
-                                    className="w-4 h-4 text-red-600"
-                                />
-                                <div>
-                                    <p className="font-medium text-gray-900">Email</p>
-                                    <p className="text-sm text-gray-600">Receive confirmations and reminders via email</p>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
                     {/* Capacity Warning */}
                     {errors.capacity && (
                         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">

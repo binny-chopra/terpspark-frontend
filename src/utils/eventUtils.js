@@ -39,6 +39,9 @@ export const formatEventTime = (timeString) => {
  * @returns {string} - Time range (e.g., "2:00 PM - 4:00 PM")
  */
 export const formatTimeRange = (startTime, endTime) => {
+    if (!endTime) {
+        return formatEventTime(startTime);
+    }
     return `${formatEventTime(startTime)} - ${formatEventTime(endTime)}`;
 };
 

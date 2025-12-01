@@ -1,13 +1,40 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { X, Download, Calendar, MapPin, Clock, User } from 'lucide-react';
 import { formatEventDate, formatTimeRange } from '@utils/eventUtils';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 const TicketModal = ({ registration, onClose }) => {
     const { event } = registration;
+    const ticketRef = useRef(null);
 
-    const handleDownload = () => {
-        // In production, this would download an actual ticket
-        alert('Ticket download will be implemented with backend integration');
+    const handleDownload = async () => {
+        try {
+            const ticketElement = ticketRef.current;
+            const canvas = await html2canvas(ticketElement, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                logging: false
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const imgWidth = 190;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            const x = (pdf.internal.pageSize.getWidth() - imgWidth) / 2;
+            const y = 10;
+
+            pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+            pdf.save(`ticket-${registration.ticketCode}.pdf`);
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            alert('Failed to download ticket. Please try again.');
+        }
     };
 
     return (
@@ -26,7 +53,7 @@ const TicketModal = ({ registration, onClose }) => {
                 </div>
 
                 {/* Ticket Content */}
-                <div className="p-6">
+                <div className="p-6" ref={ticketRef}>
                     {/* Event Title */}
                     <div className="text-center mb-6">
                         <h3 className="text-xl font-bold text-gray-900 mb-2">{event.title}</h3>
