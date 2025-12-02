@@ -3,7 +3,6 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import EditEventPage from '@pages/EditEventPage';
 import '../setup/layoutMocks';
 
-// Mock fetch globally
 global.fetch = vi.fn();
 
 const mockNavigate = vi.fn();
@@ -36,7 +35,7 @@ vi.mock('@services/eventService', () => ({
 }));
 
 const draftEvent = {
-  id: 1, // Use numeric ID to match String(evt.id) === String(eventId) comparison
+  id: 1,
   title: 'Tech Talk',
   description: 'A'.repeat(60),
   categoryId: 'cat-1',
@@ -73,7 +72,6 @@ describe('EditEventPage', () => {
     vi.clearAllMocks();
     global.fetch.mockClear();
     window.confirm = vi.fn().mockReturnValue(true);
-    // Mock venues fetch
     global.fetch.mockResolvedValue({
       ok: true,
       json: async () => ({ success: true, venues: venuesFixture })
@@ -81,8 +79,8 @@ describe('EditEventPage', () => {
   });
 
   it('shows loading spinner while fetching event data', () => {
-    mockGetCategories.mockReturnValue(new Promise(() => {})); // keep pending
-    mockGetOrganizerEvents.mockReturnValue(new Promise(() => {})); // keep pending
+    mockGetCategories.mockReturnValue(new Promise(() => {}));
+    mockGetOrganizerEvents.mockReturnValue(new Promise(() => {}));
     render(<EditEventPage />);
 
     const spinner = document.querySelector('.animate-spin');
@@ -139,7 +137,6 @@ describe('EditEventPage', () => {
     });
   });
 
-  // Change note validation for pending events is not implemented in the current component
   it.skip('requires change note when editing pending events', async () => {
     const pendingEventWithVenue = { ...pendingEvent, venueId: 1 };
     mockGetCategories.mockResolvedValue({ success: true, categories });
@@ -170,7 +167,6 @@ describe('EditEventPage', () => {
     expect(mockAddToast).toHaveBeenCalledWith('Event resubmitted for approval', 'success');
   });
 
-  // The component doesn't currently prevent editing published events
   it.skip('shows cannot edit screen when event is published', async () => {
     const publishedEvent = { ...draftEvent, status: 'published', venueId: 1 };
     mockGetCategories.mockResolvedValue({ success: true, categories });

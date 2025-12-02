@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import MyEventsPage from '@pages/MyEventsPage';
 import '../setup/layoutMocks';
@@ -60,18 +60,10 @@ const resolveEvents = () => {
 describe('MyEventsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockNavigate.mockReset();
-    mockGetOrganizerEvents.mockReset();
-    mockCancelEvent.mockReset();
-    mockDuplicateEvent.mockReset();
     resolveEvents();
     mockCancelEvent.mockResolvedValue({ success: true });
     mockDuplicateEvent.mockResolvedValue({ success: true });
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
+    window.confirm = vi.fn().mockReturnValue(true);
   });
 
   it('shows loading spinner while fetching events', () => {

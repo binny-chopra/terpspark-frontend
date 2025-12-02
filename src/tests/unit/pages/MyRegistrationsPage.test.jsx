@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import MyRegistrationsPage from '@pages/MyRegistrationsPage';
 import '../setup/layoutMocks';
@@ -103,10 +103,6 @@ describe('MyRegistrationsPage', () => {
     resolveData();
     mockCancelRegistration.mockResolvedValue({ success: true });
     mockLeaveWaitlist.mockResolvedValue({ success: true });
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   it('shows loading spinner while fetching data', () => {
