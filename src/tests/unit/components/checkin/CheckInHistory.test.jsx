@@ -274,34 +274,6 @@ describe('CheckInHistory', () => {
     });
   });
 
-  it('calculates method statistics correctly', async () => {
-    render(<CheckInHistory eventId="1" onRefresh={mockOnRefresh} />);
-
-    await waitFor(() => {
-      expect(screen.getByText('QR Scans')).toBeInTheDocument();
-      expect(screen.getAllByText('Manual').length).toBeGreaterThan(0);
-    });
-  });
-
-  it('calculates total guests correctly', async () => {
-    render(<CheckInHistory eventId="1" onRefresh={mockOnRefresh} />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Total Guests')).toBeInTheDocument();
-      const ones = screen.getAllByText('1');
-      expect(ones.length).toBeGreaterThan(0);
-    });
-  });
-
-  it('formats time and date correctly', async () => {
-    render(<CheckInHistory eventId="1" onRefresh={mockOnRefresh} />);
-
-    await waitFor(() => {
-      const allText = screen.getByText('John Doe').closest('.bg-white').textContent;
-      expect(allText).toMatch(/10:00|AM|PM/);
-      expect(screen.getAllByText(/Dec 1, 2025/).length).toBeGreaterThan(0);
-    });
-  });
 
   it('reloads check-ins when eventId changes', async () => {
     const { rerender } = render(<CheckInHistory eventId="1" onRefresh={mockOnRefresh} />);

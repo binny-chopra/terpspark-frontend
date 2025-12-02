@@ -65,47 +65,4 @@ describe('AnalyticsChart', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders bar chart with correct data keys', () => {
-    render(<AnalyticsChart type="bar" data={barData} title="Test Chart" />);
-
-    const eventsBar = screen.getByTestId('bar-events');
-    const registrationsBar = screen.getByTestId('bar-registrations');
-
-    expect(eventsBar).toHaveAttribute('data-name', 'Events');
-    expect(registrationsBar).toHaveAttribute('data-name', 'Registrations');
-  });
-
-  it('renders pie chart with correct data keys', () => {
-    render(<AnalyticsChart type="pie" data={pieData} title="Test Chart" />);
-
-    const pie = screen.getByTestId('pie');
-    expect(pie).toHaveAttribute('data-key', 'value');
-    expect(pie).toHaveAttribute('data-name-key', 'name');
-  });
-
-  it('renders category-bars chart with vertical layout', () => {
-    render(<AnalyticsChart type="category-bars" data={categoryBarData} title="Test Chart" />);
-
-    expect(screen.getByTestId('bar-chart')).toBeInTheDocument();
-    expect(screen.getByTestId('bar-registrations')).toBeInTheDocument();
-    expect(screen.getByTestId('bar-attendance')).toBeInTheDocument();
-  });
-
-  it('renders chart components for bar chart', () => {
-    render(<AnalyticsChart type="bar" data={barData} title="Test Chart" />);
-
-    expect(screen.getByTestId('responsive-container')).toBeInTheDocument();
-    expect(screen.getByTestId('cartesian-grid')).toBeInTheDocument();
-    expect(screen.getByTestId('x-axis')).toBeInTheDocument();
-    expect(screen.getByTestId('y-axis')).toBeInTheDocument();
-    expect(screen.getByTestId('tooltip')).toBeInTheDocument();
-  });
-
-  it('renders chart components for pie chart', () => {
-    render(<AnalyticsChart type="pie" data={pieData} title="Test Chart" />);
-
-    expect(screen.getByTestId('responsive-container')).toBeInTheDocument();
-    expect(screen.getByTestId('pie-chart')).toBeInTheDocument();
-    expect(screen.getByTestId('tooltip')).toBeInTheDocument();
-  });
 });

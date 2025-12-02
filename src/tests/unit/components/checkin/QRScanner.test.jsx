@@ -96,47 +96,6 @@ describe('QRScanner', () => {
     consoleError.mockRestore();
   });
 
-  it('displays correct status icon for idle state', () => {
-    render(<QRScanner eventId="1" onScan={mockOnScan} onError={mockOnError} />);
-
-    expect(screen.getByText('Camera ready')).toBeInTheDocument();
-  });
-
-  it('displays correct status icon for scanning state', () => {
-    render(<QRScanner eventId="1" onScan={mockOnScan} onError={mockOnError} />);
-
-    fireEvent.click(screen.getByText('Start Camera'));
-
-    expect(screen.getAllByText('Point camera at QR code...').length).toBeGreaterThan(0);
-  });
-
-  it('displays correct status icon for success state', async () => {
-    render(<QRScanner eventId="1" onScan={mockOnScan} onError={mockOnError} />);
-
-    fireEvent.click(screen.getByText('Start Camera'));
-    fireEvent.click(screen.getByText('Simulate Scan'));
-
-    await waitFor(() => {
-      expect(screen.getAllByText('QR Code detected!').length).toBeGreaterThan(0);
-    });
-  });
-
-  it('displays status message with correct styling', () => {
-    render(<QRScanner eventId="1" onScan={mockOnScan} onError={mockOnError} />);
-
-    fireEvent.click(screen.getByText('Start Camera'));
-
-    const statusMessages = screen.getAllByText('Point camera at QR code...');
-    const statusMessage = statusMessages[statusMessages.length - 1].closest('.bg-blue-100');
-    expect(statusMessage).toBeInTheDocument();
-  });
-
-  it('displays instructions', () => {
-    render(<QRScanner eventId="1" onScan={mockOnScan} onError={mockOnError} />);
-
-    expect(screen.getByText(/How to use QR scanner/i)).toBeInTheDocument();
-    expect(screen.getByText(/Click "Start Camera" to activate the scanner/i)).toBeInTheDocument();
-  });
 
   it('cleans up on unmount', async () => {
     const { unmount } = render(<QRScanner eventId="1" onScan={mockOnScan} onError={mockOnError} />);

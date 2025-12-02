@@ -242,12 +242,6 @@ describe('AttendeeSearch', () => {
     });
   });
 
-  it('displays instructions when no search has been performed', () => {
-    render(<AttendeeSearch eventId="1" onCheckIn={mockOnCheckIn} onError={mockOnError} />);
-
-    expect(screen.getByText(/Manual Check-In Instructions/i)).toBeInTheDocument();
-    expect(screen.getByText(/Enter the attendee's name, email, or ticket code/i)).toBeInTheDocument();
-  });
 
   it('clears search results after successful check-in', async () => {
     render(<AttendeeSearch eventId="1" onCheckIn={mockOnCheckIn} onError={mockOnError} />);

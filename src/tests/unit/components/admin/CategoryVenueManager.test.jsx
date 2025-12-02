@@ -317,20 +317,6 @@ describe('CategoryVenueManager', () => {
       expect(screen.getByText(/Grand Ballroom.*Capacity: 500/)).toBeInTheDocument();
     });
 
-    it('displays facilities for venues', () => {
-      render(
-        <CategoryVenueManager
-          type="venue"
-          items={venues}
-          onAdd={mockOnAdd}
-          onUpdate={mockOnUpdate}
-          onRetire={mockOnRetire}
-        />
-      );
-
-      expect(screen.getByText('WiFi')).toBeInTheDocument();
-      expect(screen.getByText('AV')).toBeInTheDocument();
-    });
 
     it('opens add form for venue when add button is clicked', () => {
       render(

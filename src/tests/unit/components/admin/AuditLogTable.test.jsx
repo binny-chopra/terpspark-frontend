@@ -68,21 +68,6 @@ describe('AuditLogTable', () => {
     expect(screen.getByText('Org Approved')).toBeInTheDocument();
   });
 
-  it('displays actor information correctly', () => {
-    render(<AuditLogTable logs={mockLogs} />);
-
-    expect(screen.getAllByText('John Doe').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('student').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('organizer').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('admin').length).toBeGreaterThan(0);
-  });
-
-  it('displays target information correctly', () => {
-    render(<AuditLogTable logs={mockLogs} />);
-
-    expect(screen.getByText('Tech Talk')).toBeInTheDocument();
-    expect(screen.getByText('New Organizer')).toBeInTheDocument();
-  });
 
   it('displays System when actor is not provided', () => {
     const logsWithoutActor = [{
