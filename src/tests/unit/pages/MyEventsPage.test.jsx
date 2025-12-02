@@ -28,26 +28,53 @@ vi.mock('@components/common/LoadingSpinner', () => ({
   default: ({ message }) => <div>{message}</div>,
 }));
 
+vi.mock('@components/events/EventDetailModal', () => ({
+  default: ({ event, onClose }) => event ? (
+    <div data-testid="event-detail-modal">
+      <p>{event.title}</p>
+      <button onClick={onClose}>close modal</button>
+    </div>
+  ) : null,
+}));
+
 vi.mock('@components/organizer/OrganizerEventCard', () => ({
-  default: ({ event, onEdit, onCancel, onDuplicate, onViewAttendees }) => (
+  default: ({ event, onEdit, onCancel, onDuplicate, onViewAttendees, onViewDetails, onSendForApproval }) => (
     <div data-testid={`event-card-${event.id}`}>
       <p>{event.title}</p>
       <button onClick={() => onEdit(event.id)}>edit</button>
       <button onClick={() => onCancel(event.id)}>cancel</button>
       <button onClick={() => onDuplicate(event.id)}>duplicate</button>
       <button onClick={() => onViewAttendees(event.id)}>attendees</button>
+      <button onClick={() => onViewDetails && onViewDetails(event)}>view details</button>
+      <button onClick={() => onSendForApproval && onSendForApproval(event)}>send for approval</button>
     </div>
   ),
 }));
+
+const mockUpdateEvent = vi.fn();
 
 vi.mock('@services/organizerService', () => ({
   getOrganizerEvents: (...args) => mockGetOrganizerEvents(...args),
   cancelEvent: (...args) => mockCancelEvent(...args),
   duplicateEvent: (...args) => mockDuplicateEvent(...args),
+  updateEvent: (...args) => mockUpdateEvent(...args),
 }));
 
 const eventsFixture = [
-  { id: 'evt-1', title: 'Draft Event', status: 'draft' },
+  { 
+    id: 'evt-1', 
+    title: 'Draft Event', 
+    status: 'draft',
+    categoryId: 'cat-1',
+    date: '2025-12-15',
+    startTime: '10:00',
+    endTime: '12:00',
+    venue: 'Test Venue',
+    location: 'Test Location',
+    capacity: 100,
+    tags: [],
+    imageUrl: null
+  },
   { id: 'evt-2', title: 'Pending Event', status: 'pending' },
   { id: 'evt-3', title: 'Published Event', status: 'published' },
   { id: 'evt-4', title: 'Cancelled Event', status: 'cancelled' },
@@ -63,6 +90,7 @@ describe('MyEventsPage', () => {
     resolveEvents();
     mockCancelEvent.mockResolvedValue({ success: true });
     mockDuplicateEvent.mockResolvedValue({ success: true });
+    mockUpdateEvent.mockResolvedValue({ success: true });
     window.confirm = vi.fn().mockReturnValue(true);
   });
 
@@ -151,5 +179,127 @@ describe('MyEventsPage', () => {
 
     fireEvent.click(within(firstCard).getByText('attendees'));
     expect(mockNavigate).toHaveBeenCalledWith('/event-attendees/evt-1');
+  });
+
+  it('opens event detail modal when view details is clicked', async () => {
+    render(<MyEventsPage />);
+    const cards = await screen.findAllByTestId(/event-card-/);
+    const firstCard = cards[0];
+
+    fireEvent.click(within(firstCard).getByText('view details'));
+
+    await waitFor(() => {
+      const modal = screen.getByTestId('event-detail-modal');
+      expect(modal).toBeInTheDocument();
+      expect(within(modal).getByText('Draft Event')).toBeInTheDocument();
+    });
+  });
+
+  it('closes event detail modal when close is clicked', async () => {
+    render(<MyEventsPage />);
+    const cards = await screen.findAllByTestId(/event-card-/);
+    const firstCard = cards[0];
+
+    fireEvent.click(within(firstCard).getByText('view details'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('event-detail-modal')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('close modal'));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('event-detail-modal')).not.toBeInTheDocument();
+    });
+  });
+
+  it('sends draft event for approval', async () => {
+    render(<MyEventsPage />);
+    const cards = await screen.findAllByTestId(/event-card-/);
+    const draftCard = cards[0];
+
+    fireEvent.click(within(draftCard).getByText('send for approval'));
+
+    await waitFor(() => {
+      expect(mockUpdateEvent).toHaveBeenCalledWith('evt-1', expect.objectContaining({
+        status: 'pending'
+      }));
+      expect(mockAddToast).toHaveBeenCalledWith('Event submitted for approval', 'success');
+    });
+
+    await waitFor(() => {
+      expect(mockGetOrganizerEvents).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('handles send for approval failure', async () => {
+    mockUpdateEvent.mockResolvedValueOnce({ success: false, error: 'Update failed' });
+    render(<MyEventsPage />);
+    const cards = await screen.findAllByTestId(/event-card-/);
+    const draftCard = cards[0];
+
+    fireEvent.click(within(draftCard).getByText('send for approval'));
+
+    await waitFor(() => {
+      expect(mockAddToast).toHaveBeenCalledWith('Update failed', 'error');
+    });
+  });
+
+  it('handles cancel event failure', async () => {
+    mockCancelEvent.mockResolvedValueOnce({ success: false, error: 'Cancel failed' });
+    render(<MyEventsPage />);
+    const cards = await screen.findAllByTestId(/event-card-/);
+    const firstCard = cards[0];
+
+    fireEvent.click(within(firstCard).getByText('cancel'));
+
+    await waitFor(() => {
+      expect(mockAddToast).toHaveBeenCalledWith('Cancel failed', 'error');
+    });
+  });
+
+  it('handles duplicate event failure', async () => {
+    mockDuplicateEvent.mockResolvedValueOnce({ success: false, error: 'Duplicate failed' });
+    render(<MyEventsPage />);
+    const cards = await screen.findAllByTestId(/event-card-/);
+    const publishedCard = cards[2];
+
+    fireEvent.click(within(publishedCard).getByText('duplicate'));
+
+    await waitFor(() => {
+      expect(mockAddToast).toHaveBeenCalledWith('Duplicate failed', 'error');
+    });
+  });
+
+  it('shows empty state for specific tab when filtered', async () => {
+    mockGetOrganizerEvents.mockResolvedValueOnce({ 
+      success: true, 
+      events: [
+        { id: 'evt-1', title: 'Draft Event', status: 'draft' }
+      ] 
+    });
+    render(<MyEventsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('My Events')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /pending \(0\)/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/no pending events/i)).toBeInTheDocument();
+    });
+  });
+
+  it('displays correct event counts in tabs', async () => {
+    render(<MyEventsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /all \(4\)/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /draft \(1\)/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /pending \(1\)/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /published \(1\)/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /cancelled \(1\)/i })).toBeInTheDocument();
+    });
   });
 });
