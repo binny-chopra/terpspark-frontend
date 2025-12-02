@@ -6,10 +6,11 @@ import '../setup/layoutMocks';
 const mockUseParams = vi.fn();
 const mockNavigate = vi.fn();
 const mockUseAuth = vi.fn();
-const mockGetOrganizerEvents = vi.fn();
+const mockGetEventById = vi.fn();
 const mockGetEventAttendees = vi.fn();
 const mockExportAttendeesCSV = vi.fn();
 const mockSendAnnouncement = vi.fn();
+const mockAddToast = vi.fn();
 
 vi.mock('react-router-dom', () => ({
   useParams: () => mockUseParams(),
@@ -21,12 +22,16 @@ vi.mock('@context/AuthContext', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
+vi.mock('@context/ToastContext', () => ({
+  useToast: () => ({ addToast: mockAddToast }),
+}));
+
 vi.mock('@components/common/LoadingSpinner', () => ({
   default: ({ message }) => <div>{message}</div>,
 }));
 
 vi.mock('@services/organizerService', () => ({
-  getOrganizerEvents: (...args) => mockGetOrganizerEvents(...args),
+  getEventById: (...args) => mockGetEventById(...args),
   getEventAttendees: (...args) => mockGetEventAttendees(...args),
   exportAttendeesCSV: (...args) => mockExportAttendeesCSV(...args),
   sendAnnouncement: (...args) => mockSendAnnouncement(...args),
@@ -60,16 +65,22 @@ const attendeesFixture = [
 const resolveData = () => {
   mockUseParams.mockReturnValue({ eventId: '42' });
   mockUseAuth.mockReturnValue({ user: { id: 'org-1' } });
-  mockGetOrganizerEvents.mockResolvedValue({
+  mockGetEventById.mockResolvedValue({
     success: true,
-    events: [eventFixture],
+    data: eventFixture,
   });
   mockGetEventAttendees.mockResolvedValue({
     success: true,
     attendees: attendeesFixture,
+    statistics: {
+      totalRegistrations: attendeesFixture.length,
+      totalAttendees: attendeesFixture.reduce((sum, a) => sum + 1 + (a.guests?.length || 0), 0),
+      checkedIn: attendeesFixture.filter(a => a.checkInStatus === 'checked_in').length,
+      notCheckedIn: attendeesFixture.filter(a => a.checkInStatus === 'not_checked_in').length,
+    },
   });
-  mockExportAttendeesCSV.mockResolvedValue();
-  mockSendAnnouncement.mockResolvedValue({ success: true });
+  mockExportAttendeesCSV.mockResolvedValue({ success: true });
+  mockSendAnnouncement.mockResolvedValue({ success: true, message: 'Announcement sent successfully!' });
 };
 
 describe('EventAttendeesPage', () => {
@@ -79,7 +90,7 @@ describe('EventAttendeesPage', () => {
   });
 
   it('shows loading spinner while fetching data', () => {
-    mockGetOrganizerEvents.mockReturnValue(new Promise(() => {}));
+    mockGetEventById.mockReturnValue(new Promise(() => {}));
     mockGetEventAttendees.mockReturnValue(new Promise(() => {}));
 
     render(<EventAttendeesPage />);
@@ -97,7 +108,7 @@ describe('EventAttendeesPage', () => {
   });
 
   it('shows event not found message when event is missing', async () => {
-    mockGetOrganizerEvents.mockResolvedValue({ success: true, events: [] });
+    mockGetEventById.mockResolvedValue({ success: false, error: 'Event not found' });
     render(<EventAttendeesPage />);
 
     await waitFor(() => expect(screen.getByText('Event Not Found')).toBeInTheDocument());
@@ -123,17 +134,19 @@ describe('EventAttendeesPage', () => {
     await screen.findByText('Innovation Summit');
 
     fireEvent.click(screen.getByText('Export CSV'));
-    await waitFor(() => expect(mockExportAttendeesCSV).toHaveBeenCalledWith(attendeesFixture, 'Innovation Summit'));
+    await waitFor(() => expect(mockExportAttendeesCSV).toHaveBeenCalledWith('42', 'Innovation Summit'));
   });
 
   it('opens announcement modal and sends announcement', async () => {
-    window.alert = vi.fn();
     render(<EventAttendeesPage />);
     await screen.findByText('Send Announcement');
 
     fireEvent.click(screen.getByRole('button', { name: /Send Announcement/i }));
     const modalHeading = await screen.findByRole('heading', { name: 'Send Announcement' });
     expect(modalHeading).toBeInTheDocument();
+
+    const subjectInput = screen.getByPlaceholderText('Enter announcement subject...');
+    fireEvent.change(subjectInput, { target: { value: 'Test Subject' } });
 
     const textarea = screen.getByPlaceholderText('Enter your announcement message...');
     fireEvent.change(textarea, { target: { value: 'Hello attendees!' } });
@@ -142,7 +155,11 @@ describe('EventAttendeesPage', () => {
     const modalContainer = within(textarea.closest('.bg-white'));
     const modalSendButton = modalContainer.getByRole('button', { name: 'Send Announcement' });
     fireEvent.click(modalSendButton);
-    await waitFor(() => expect(mockSendAnnouncement).toHaveBeenCalledWith('42', 'Hello attendees!'));
-    expect(window.alert).toHaveBeenCalledWith('Announcement sent successfully!');
+    await waitFor(() => expect(mockSendAnnouncement).toHaveBeenCalledWith('42', {
+      subject: 'Test Subject',
+      message: 'Hello attendees!',
+      sendVia: 'email'
+    }));
+    expect(mockAddToast).toHaveBeenCalledWith('Announcement sent successfully!', 'success');
   });
 });

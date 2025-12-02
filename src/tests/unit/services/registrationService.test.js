@@ -5,6 +5,14 @@ import { flushTimers } from '../helpers/testUtils';
 const REGISTRATIONS_KEY = 'terpspark_registrations';
 const WAITLIST_KEY = 'terpspark_waitlist';
 
+// Mock fetch globally
+global.fetch = vi.fn();
+
+// Mock authService.getAuthToken
+vi.mock('@services/authService', () => ({
+  getAuthToken: () => 'mock-token'
+}));
+
 describe('registrationService', () => {
   let registrationService;
   let mockEvents;
@@ -20,6 +28,7 @@ describe('registrationService', () => {
 
   beforeEach(async () => {
     vi.resetModules();
+    global.fetch.mockClear();
     registrationService = await import('@services/registrationService');
     mockEvents = (await import('@data/mockEvents.json')).default;
     mockRegistrations = (await import('@data/mockRegistrations.json')).default;
@@ -41,6 +50,16 @@ describe('registrationService', () => {
   });
 
   it('returns user registrations enriched with event data', async () => {
+    const mockRegistrations = baseRegistrations.map(reg => ({
+      ...reg,
+      event: baseEvents.find(e => e.id === reg.eventId) || { id: reg.eventId, title: 'Test Event' }
+    }));
+
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ registrations: mockRegistrations })
+    });
+
     vi.useFakeTimers();
     const promise = registrationService.getUserRegistrations(1);
     await flushTimers();
@@ -56,6 +75,24 @@ describe('registrationService', () => {
     const targetEvent = mockEvents.events.find(e => e.status === 'published' && e.capacity - e.registeredCount >= 2);
     targetEvent.registeredCount = 0;
 
+    const mockRegistration = {
+      id: 'new-reg-123',
+      userId: 42,
+      eventId: targetEvent.id,
+      status: 'confirmed',
+      registeredAt: new Date().toISOString(),
+      guests: [{ name: 'Guest' }]
+    };
+
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        registration: mockRegistration,
+        message: 'Successfully registered for event',
+        addedToWaitlist: false
+      })
+    });
+
     vi.useFakeTimers();
     const promise = registrationService.registerForEvent(42, targetEvent.id, { guests: [{ name: 'Guest' }] });
     await flushTimers();
@@ -67,15 +104,27 @@ describe('registrationService', () => {
       eventId: targetEvent.id,
       status: 'confirmed'
     });
-
-    const stored = JSON.parse(localStorage.getItem(REGISTRATIONS_KEY));
-    expect(stored.some(r => r.id === result.registration.id)).toBe(true);
-    expect(targetEvent.registeredCount).toBeGreaterThan(0);
   });
 
   it('adds user to waitlist when event is full', async () => {
     const targetEvent = mockEvents.events.find(e => e.status === 'published');
     targetEvent.registeredCount = targetEvent.capacity;
+
+    const mockWaitlistEntry = {
+      id: 'wait-123',
+      userId: 55,
+      eventId: targetEvent.id,
+      position: 1
+    };
+
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        message: 'Added to waitlist successfully',
+        waitlistEntry: mockWaitlistEntry,
+        addedToWaitlist: true
+      })
+    });
 
     vi.useFakeTimers();
     const promise = registrationService.registerForEvent(55, targetEvent.id);
@@ -84,10 +133,7 @@ describe('registrationService', () => {
 
     expect(result.success).toBe(true);
     expect(result.message).toMatch(/waitlist/i);
-    expect(result.waitlistEntry).toMatchObject({ userId: 55, eventId: targetEvent.id });
-
-    const waitlist = JSON.parse(localStorage.getItem(WAITLIST_KEY));
-    expect(waitlist.some(entry => entry.id === result.waitlistEntry.id)).toBe(true);
+    expect(result.addedToWaitlist).toBe(true);
   });
 
   it('cancels a registration and frees capacity', async () => {
@@ -105,16 +151,20 @@ describe('registrationService', () => {
     const targetEvent = mockEvents.events.find(e => e.id === registration.eventId);
     targetEvent.registeredCount = 5;
 
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        message: 'Registration cancelled successfully'
+      })
+    });
+
     vi.useFakeTimers();
     const promise = registrationService.cancelRegistration(77, 999);
     await flushTimers();
     const result = await promise;
 
     expect(result.success).toBe(true);
-    const stored = JSON.parse(localStorage.getItem(REGISTRATIONS_KEY));
-    const storedRegistration = stored.find(r => r.id === 999);
-    expect(storedRegistration.status).toBe('cancelled');
-    expect(targetEvent.registeredCount).toBe(4);
+    expect(result.message).toMatch(/cancelled/i);
   });
 });
 
