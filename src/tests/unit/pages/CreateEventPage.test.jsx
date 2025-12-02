@@ -174,4 +174,68 @@ describe('CreateEventPage', () => {
     expect(window.confirm).toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith('/my-events');
   });
+
+  it('handles venue loading error gracefully', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    global.fetch.mockRejectedValueOnce(new Error('Network error'));
+
+    render(<CreateEventPage />);
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to load venues:', expect.any(Error));
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('handles venue response without success', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: false })
+    });
+
+    render(<CreateEventPage />);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalled();
+    });
+  });
+
+  it('handles venue response with empty venues array', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, venues: [] })
+    });
+
+    render(<CreateEventPage />);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalled();
+    });
+  });
+
+  it('clears venue selection when invalid venue ID is selected', async () => {
+    render(<CreateEventPage />);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Select a venue')).toBeInTheDocument();
+    });
+
+    const venueSelect = getFieldByLabel('Venue *');
+    fireEvent.change(venueSelect, {
+      target: { value: venuesFixture[0].id },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Selected Venue/i)).toBeInTheDocument();
+    });
+
+    fireEvent.change(venueSelect, {
+      target: { value: 'invalid-venue-id' },
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Selected Venue/i)).not.toBeInTheDocument();
+    });
+  });
 });
