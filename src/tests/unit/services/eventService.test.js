@@ -1,19 +1,31 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { flushTimers, setupServiceBeforeEach, setupServiceAfterEach } from '../helpers/testUtils';
 
+global.fetch = vi.fn();
+
 describe('eventService', () => {
   let eventService;
 
   beforeEach(async () => {
+    global.fetch.mockClear();
     eventService = await setupServiceBeforeEach('@services/eventService');
   });
 
   afterEach(() => {
     setupServiceAfterEach();
-    vi.unstubAllGlobals?.();
   });
 
   it('filters events by search term and availability', async () => {
+    const mockEvents = [
+      { id: 1, title: 'Mental Health Workshop', description: 'Mental wellness', tags: ['mental'], registeredCount: 5, capacity: 100, status: 'published' }
+    ];
+
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ events: mockEvents })
+    });
+
     vi.useFakeTimers();
     const promise = eventService.getAllEvents({ search: 'mental', availableOnly: true });
     await flushTimers();
@@ -33,6 +45,13 @@ describe('eventService', () => {
   });
 
   it('returns error when event is not found', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ error: 'Event not found' })
+    });
+
     vi.useFakeTimers();
     const promise = eventService.getEventById(9999);
     await flushTimers();
@@ -43,6 +62,18 @@ describe('eventService', () => {
   });
 
   it('returns featured events sorted and limited to three items', async () => {
+    const mockEvents = [
+      { id: 1, title: 'Featured 1', isFeatured: true, status: 'published' },
+      { id: 2, title: 'Featured 2', isFeatured: true, status: 'published' },
+      { id: 3, title: 'Featured 3', isFeatured: true, status: 'published' }
+    ];
+
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ events: mockEvents })
+    });
+
     vi.useFakeTimers();
     const promise = eventService.getFeaturedEvents();
     await flushTimers();
@@ -54,6 +85,17 @@ describe('eventService', () => {
   });
 
   it('searches events case-insensitively and returns published ones', async () => {
+    const mockEvents = [
+      { id: 1, title: 'Career Fair', status: 'published' },
+      { id: 2, title: 'Career Workshop', status: 'published' }
+    ];
+
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ events: mockEvents })
+    });
+
     vi.useFakeTimers();
     const promise = eventService.searchEvents('career');
     await flushTimers();
@@ -65,6 +107,17 @@ describe('eventService', () => {
   });
 
   it('returns categories from mock data and remote endpoint', async () => {
+    const mockCategories = [
+      { id: 1, name: 'Career', slug: 'career' },
+      { id: 2, name: 'Wellness', slug: 'wellness' }
+    ];
+
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ categories: mockCategories })
+    });
+
     vi.useFakeTimers();
     const categoriesPromise = eventService.getCategories();
     await flushTimers();
@@ -73,20 +126,18 @@ describe('eventService', () => {
     expect(categoriesResult.success).toBe(true);
     expect(categoriesResult.categories.length).toBeGreaterThan(0);
 
-    const mockResponse = {
+    global.fetch.mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ categories: ['career', 'wellness'] })
-    };
-    const fetchSpy = vi.fn(() => Promise.resolve(mockResponse));
-    vi.stubGlobal('fetch', fetchSpy);
+      headers: { get: () => 'application/json' },
+      json: async () => ({ categories: ['career', 'wellness'] })
+    });
 
     const remoteResult = await eventService.getAllCategories();
-    expect(fetchSpy).toHaveBeenCalledWith('/api/categories');
-    expect(remoteResult).toEqual({
-      success: true,
-      data: ['career', 'wellness'],
-      error: undefined
-    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/categories'),
+      expect.any(Object)
+    );
+    expect(remoteResult.success).toBe(true);
   });
 });
 

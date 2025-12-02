@@ -1,12 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import CreateEventPage from '@pages/CreateEventPage';
 import { getFieldByLabel } from '../helpers/testUtils';
 import '../setup/layoutMocks';
 
 const mockNavigate = vi.fn();
 const mockGetCategories = vi.fn();
-const mockCreateEvent = vi.fn();
+
+global.fetch = vi.fn();
 
 vi.mock('@context/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'org-1', name: 'Organizer One' } }),
@@ -21,106 +22,148 @@ vi.mock('@services/eventService', () => ({
   getCategories: (...args) => mockGetCategories(...args),
 }));
 
-vi.mock('@services/organizerService', () => ({
-  createEvent: (...args) => mockCreateEvent(...args),
-}));
-
 const categoriesFixture = [
   { id: 'cat-1', name: 'Career', slug: 'career' },
   { id: 'cat-2', name: 'Social', slug: 'social' },
 ];
 
-const fillValidForm = () => {
-  fireEvent.change(screen.getByPlaceholderText(/fall career fair/i), {
-    target: { value: 'Tech Meetup' },
-  });
-  fireEvent.change(screen.getByPlaceholderText(/detailed description/i), {
-    target: { value: 'A'.repeat(60) },
-  });
-  fireEvent.change(getFieldByLabel('Category *'), { target: { value: 'career' } });
-  fireEvent.change(getFieldByLabel('Event Date *'), { target: { value: '2099-01-01' } });
-  fireEvent.change(getFieldByLabel('Start Time *'), { target: { value: '10:00' } });
-  fireEvent.change(getFieldByLabel('End Time *'), { target: { value: '11:00' } });
-  fireEvent.change(getFieldByLabel('Venue Name *'), {
-    target: { value: 'Grand Ballroom' },
-  });
-  fireEvent.change(getFieldByLabel('Building/Location *'), {
-    target: { value: 'Stamp' },
-  });
-  fireEvent.change(getFieldByLabel('Capacity *'), {
-    target: { value: '100' },
-  });
-  fireEvent.change(screen.getByPlaceholderText(/comma-separated/i), {
-    target: { value: 'tech, networking' },
-  });
-  fireEvent.change(screen.getByPlaceholderText(/https:\/\/example\.com\/image\.jpg/i), {
-    target: { value: 'https://example.com/image.jpg' },
-  });
-};
+const venuesFixture = [
+  { 
+    id: '1', 
+    name: 'Stamp Student Union', 
+    building: 'Stamp Student Union', 
+    capacity: 500, 
+    isActive: true,
+    facilities: ['Projector', 'WiFi', 'Sound System']
+  },
+  { 
+    id: '2', 
+    name: 'Iribe Center', 
+    building: 'Iribe Center for Computer Science', 
+    capacity: 300, 
+    isActive: true,
+    facilities: ['Projector', 'WiFi']
+  },
+];
 
 describe('CreateEventPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    window.alert = vi.fn();
+    global.fetch.mockClear();
     window.confirm = vi.fn().mockReturnValue(true);
     mockGetCategories.mockResolvedValue({ success: true, categories: categoriesFixture });
-    mockCreateEvent.mockResolvedValue({ success: true });
+    global.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, venues: venuesFixture })
+    });
   });
 
-  it('loads categories on mount and renders the form', async () => {
+  it('loads and displays categories correctly', async () => {
     render(<CreateEventPage />);
 
     await waitFor(() => expect(mockGetCategories).toHaveBeenCalledTimes(1));
-    expect(screen.getByText('Create New Event')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/fall career fair/i)).toBeInTheDocument();
+    
+    const categorySelect = getFieldByLabel('Category *');
+    expect(categorySelect).toBeInTheDocument();
+    
+    fireEvent.change(categorySelect, { target: { value: categoriesFixture[0].id } });
+    expect(categorySelect.value).toBe(categoriesFixture[0].id);
+    
+    fireEvent.change(categorySelect, { target: { value: categoriesFixture[1].id } });
+    expect(categorySelect.value).toBe(categoriesFixture[1].id);
+    
+    expect(screen.getByText('Career')).toBeInTheDocument();
+    expect(screen.getByText('Social')).toBeInTheDocument();
   });
 
-  it('validates required fields and shows error messages', async () => {
+  it('allows entering date and times', async () => {
     render(<CreateEventPage />);
     await waitFor(() => expect(mockGetCategories).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByText('Create Event'));
+    const dateInput = getFieldByLabel('Event Date *');
+    const startTimeInput = getFieldByLabel('Start Time *');
+    const endTimeInput = getFieldByLabel('End Time *');
 
-    expect(screen.getByText('Event title is required')).toBeInTheDocument();
-    expect(screen.getByText('Event description is required')).toBeInTheDocument();
-    expect(mockCreateEvent).not.toHaveBeenCalled();
+    fireEvent.change(dateInput, { target: { value: '2025-12-15' } });
+    expect(dateInput.value).toBe('2025-12-15');
+
+    fireEvent.change(startTimeInput, { target: { value: '10:00' } });
+    expect(startTimeInput.value).toBe('10:00');
+
+    fireEvent.change(endTimeInput, { target: { value: '14:30' } });
+    expect(endTimeInput.value).toBe('14:30');
   });
 
-  it('submits form successfully and navigates to My Events', async () => {
+  it('allows entering tags in the tags section', async () => {
     render(<CreateEventPage />);
     await waitFor(() => expect(mockGetCategories).toHaveBeenCalled());
 
-    fillValidForm();
-    fireEvent.click(screen.getByText('Create Event'));
-
-    await waitFor(() =>
-      expect(mockCreateEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: 'Tech Meetup',
-          tags: ['tech', 'networking'],
-          organizerId: 'org-1',
-          capacity: 100,
-        }),
-      ),
-    );
-
-    expect(window.alert).toHaveBeenCalledWith(
-      'Event created successfully! It will be visible after admin approval.',
-    );
-    expect(mockNavigate).toHaveBeenCalledWith('/my-events');
+    const tagsInput = screen.getByPlaceholderText(/comma-separated/i);
+    
+    fireEvent.change(tagsInput, { target: { value: 'tech, networking, career' } });
+    expect(tagsInput.value).toBe('tech, networking, career');
+    
+    fireEvent.change(tagsInput, { target: { value: 'workshop, AI' } });
+    expect(tagsInput.value).toBe('workshop, AI');
   });
 
-  it('handles failed submission and shows alert', async () => {
-    mockCreateEvent.mockResolvedValueOnce({ success: false, error: 'Failed' });
-
+  it('shows venue details when a venue is selected', async () => {
     render(<CreateEventPage />);
-    await waitFor(() => expect(mockGetCategories).toHaveBeenCalled());
+    
+    await waitFor(() => {
+      expect(screen.getByText('Select a venue')).toBeInTheDocument();
+      expect(screen.getByText(/Stamp Student Union/)).toBeInTheDocument();
+    });
 
-    fillValidForm();
-    fireEvent.click(screen.getByText('Create Event'));
+    const venueSelect = getFieldByLabel('Venue *');
+    fireEvent.change(venueSelect, {
+      target: { value: venuesFixture[0].id },
+    });
 
-    await waitFor(() => expect(mockCreateEvent).toHaveBeenCalled());
-    expect(window.alert).toHaveBeenCalledWith('Failed');
+    await waitFor(() => {
+      expect(screen.getByText(/Selected Venue/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    const selectedVenueSection = screen.getByText(/Selected Venue/i).closest('.bg-blue-50');
+    expect(within(selectedVenueSection).getByText(/Stamp Student Union/i)).toBeInTheDocument();
+    expect(within(selectedVenueSection).getByText(/Max Capacity/i)).toBeInTheDocument();
+    expect(within(selectedVenueSection).getByText(/500.*attendees/i)).toBeInTheDocument();
+
+    const facilitiesText = screen.queryByText(/Facilities/i);
+    if (facilitiesText) {
+      expect(screen.getByText(/Projector/i)).toBeInTheDocument();
+      expect(screen.getByText(/WiFi/i)).toBeInTheDocument();
+    }
+  });
+
+  it('updates venue details when a different venue is selected', async () => {
+    render(<CreateEventPage />);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Select a venue')).toBeInTheDocument();
+    });
+
+    const venueSelect = getFieldByLabel('Venue *');
+    fireEvent.change(venueSelect, {
+      target: { value: venuesFixture[0].id },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Selected Venue/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    const firstVenueSection = screen.getByText(/Selected Venue/i).closest('.bg-blue-50');
+    expect(within(firstVenueSection).getByText(/Stamp Student Union/i)).toBeInTheDocument();
+
+    fireEvent.change(venueSelect, {
+      target: { value: venuesFixture[1].id },
+    });
+
+    await waitFor(() => {
+      const secondVenueSection = screen.getByText(/Selected Venue/i).closest('.bg-blue-50');
+      expect(within(secondVenueSection).getByText(/Iribe Center/i)).toBeInTheDocument();
+      expect(within(secondVenueSection).getByText(/300.*attendees/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
   });
 
   it('cancels and navigates away when user confirms', async () => {

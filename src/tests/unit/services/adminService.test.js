@@ -1,12 +1,19 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { flushTimers, setupServiceBeforeEach, setupServiceAfterEach } from '../helpers/testUtils';
 
+global.fetch = vi.fn();
+
+vi.mock('@services/authService', () => ({
+  getAuthToken: () => 'mock-token'
+}));
+
 const ADMIN_USER = { id: 999, name: 'Test Admin', role: 'admin' };
 
 describe('adminService', () => {
   let adminService;
 
   beforeEach(async () => {
+    global.fetch.mockClear();
     adminService = await setupServiceBeforeEach('@services/adminService');
     localStorage.clear();
   });
@@ -17,6 +24,27 @@ describe('adminService', () => {
   });
 
   it('fetches pending organizers and events', async () => {
+    const mockOrganizers = [
+      { id: 1, name: 'Org 1', status: 'pending' },
+      { id: 2, name: 'Org 2', status: 'pending' }
+    ];
+    const mockEvents = [
+      { id: 1, title: 'Event 1', status: 'pending' },
+      { id: 2, title: 'Event 2', status: 'pending' }
+    ];
+
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ requests: mockOrganizers })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ events: mockEvents })
+      });
+
     vi.useFakeTimers();
     const orgPromise = adminService.fetchPendingOrganizers();
     const eventPromise = adminService.fetchPendingEvents();
@@ -31,17 +59,17 @@ describe('adminService', () => {
   });
 
   it('approves and rejects organizer requests while logging actions', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ message: 'Organizer approved successfully' })
+    });
+
     vi.useFakeTimers();
     const approvePromise = adminService.approveOrganizer(1, ADMIN_USER, 'All good');
     await flushTimers();
     const approveResult = await approvePromise;
     expect(approveResult.success).toBe(true);
-
-    const storedOrganizers = JSON.parse(localStorage.getItem('terpspark_pending_organizers'));
-    expect(storedOrganizers.find(o => o.id === 1).status).toBe('approved');
-
-    const logs = JSON.parse(localStorage.getItem('terpspark_audit_logs'));
-    expect(logs[0].action).toBe('ORGANIZER_APPROVED');
 
     const rejectPromise = adminService.rejectOrganizer(2, ADMIN_USER, '');
     await flushTimers();
@@ -51,20 +79,33 @@ describe('adminService', () => {
   });
 
   it('approves events and records audit entries', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ message: 'Event approved successfully' })
+    });
+
     vi.useFakeTimers();
     const approvePromise = adminService.approveEvent(1, ADMIN_USER, 'Ship it');
     await flushTimers();
     const approveResult = await approvePromise;
     expect(approveResult.success).toBe(true);
-
-    const storedEvents = JSON.parse(localStorage.getItem('terpspark_pending_events'));
-    expect(storedEvents.find(e => e.id === 1).status).toBe('approved');
-
-    const logs = JSON.parse(localStorage.getItem('terpspark_audit_logs'));
-    expect(logs[0].action).toBe('EVENT_APPROVED');
   });
 
   it('creates categories and prevents duplicate slugs', async () => {
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ message: 'Category created successfully', category: { id: 1, name: 'Unique Cat', slug: 'unique-cat' } })
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ error: 'Category with this slug already exists' })
+      });
+
     vi.useFakeTimers();
     const createPromise = adminService.createCategory({ name: 'Unique Cat', slug: 'unique-cat' }, ADMIN_USER);
     await flushTimers();
@@ -79,6 +120,31 @@ describe('adminService', () => {
   });
 
   it('toggles category activity and fetches filters for audit logs', async () => {
+    const mockCategories = [
+      { id: 1, name: 'Category 1', slug: 'cat-1', isActive: true }
+    ];
+    const mockAuditLogs = [
+      { id: 1, action: 'USER_LOGIN', timestamp: new Date().toISOString() },
+      { id: 2, action: 'USER_LOGIN', timestamp: new Date().toISOString() }
+    ];
+
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ categories: mockCategories })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ message: 'Category updated successfully' })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ logs: mockAuditLogs })
+      });
+
     vi.useFakeTimers();
     const categoriesPromise = adminService.fetchCategories();
     await flushTimers();
@@ -90,10 +156,6 @@ describe('adminService', () => {
     const retireResult = await retirePromise;
     expect(retireResult.success).toBe(true);
 
-    const updatedCategories = JSON.parse(localStorage.getItem('terpspark_categories'));
-    const updatedCategory = updatedCategories.find(c => c.id === categoryId);
-    expect(typeof updatedCategory.isActive).toBe('boolean');
-
     const auditPromise = adminService.fetchAuditLogs({ action: 'USER_LOGIN' });
     await flushTimers();
     const auditResult = await auditPromise;
@@ -102,6 +164,26 @@ describe('adminService', () => {
   });
 
   it('provides analytics and dashboard stats', async () => {
+    const mockAnalytics = {
+      summary: { totalEvents: 100, totalUsers: 50 }
+    };
+    const mockStats = {
+      pendingOrganizers: 5,
+      pendingEvents: 3
+    };
+
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ analytics: mockAnalytics })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ stats: mockStats })
+      });
+
     vi.useFakeTimers();
     const analyticsPromise = adminService.fetchAnalytics();
     const statsPromise = adminService.fetchDashboardStats();

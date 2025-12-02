@@ -6,10 +6,15 @@ import '../setup/layoutMocks';
 const mockGetAllEvents = vi.fn();
 const mockRegisterForEvent = vi.fn();
 const mockCheckRegistrationStatus = vi.fn();
+const mockAddToast = vi.fn();
 const mockUseAuthUser = { id: 'user-1', name: 'Student One' };
 
 vi.mock('@context/AuthContext', () => ({
   useAuth: () => ({ user: mockUseAuthUser }),
+}));
+
+vi.mock('@context/ToastContext', () => ({
+  useToast: () => ({ addToast: mockAddToast }),
 }));
 
 const mockNavigate = vi.fn();
@@ -98,7 +103,6 @@ describe('EventsPage', () => {
     mockGetAllEvents.mockResolvedValue(mockEventsResponse());
     mockCheckRegistrationStatus.mockResolvedValue({ isRegistered: false, isWaitlisted: false });
     mockRegisterForEvent.mockResolvedValue({ success: true, message: 'Registered!' });
-    window.alert = vi.fn();
   });
 
   it('shows loading spinner while events are fetched', () => {
@@ -168,7 +172,7 @@ describe('EventsPage', () => {
     await waitFor(() =>
       expect(mockRegisterForEvent).toHaveBeenCalledWith('user-1', 1, { notes: 'Excited!' }),
     );
-    expect(window.alert).toHaveBeenCalledWith('Registered!');
+    expect(mockAddToast).toHaveBeenCalledWith('Registered!', 'success');
   });
 
   it('shows waitlist registration when event is full', async () => {
@@ -196,6 +200,6 @@ describe('EventsPage', () => {
     await waitFor(() =>
       expect(mockCheckRegistrationStatus).toHaveBeenCalledWith('user-1', 1),
     );
-    expect(window.alert).toHaveBeenCalledWith('You are already registered for this event!');
+    expect(mockAddToast).toHaveBeenCalledWith('You are already registered for this event!', 'info');
   });
 });
