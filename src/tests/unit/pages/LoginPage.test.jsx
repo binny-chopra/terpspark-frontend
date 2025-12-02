@@ -4,14 +4,12 @@ import LoginPage from '@pages/LoginPage';
 
 const mockNavigate = vi.fn();
 let mockIsAuthenticated = false;
-const mockCompleteLoginAfterOTP = vi.fn();
-
+const mockLogin = vi.fn();
 const mockInitiateLogin = vi.fn();
 const mockVerifyOTP = vi.fn();
 const mockResendOTP = vi.fn();
 const mockClearPendingLogin = vi.fn();
-
-const mockLogin = vi.fn();
+const mockCompleteLoginAfterOTP = vi.fn();
 
 vi.mock('@context/AuthContext', () => ({
   useAuth: () => ({
@@ -36,12 +34,7 @@ vi.mock('@services/authService', () => ({
 describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    window.alert = vi.fn();
     mockIsAuthenticated = false;
-    mockInitiateLogin.mockReset();
-    mockVerifyOTP.mockReset();
-    mockResendOTP.mockReset();
-    mockClearPendingLogin.mockReset();
   });
 
   it('redirects to dashboard when already authenticated', () => {
@@ -64,7 +57,6 @@ describe('LoginPage', () => {
     expect(screen.getByText('Please use a valid UMD email address')).toBeInTheDocument();
   });
 
-  // OTP functionality is not implemented in the current component
   it.skip('initiates login and shows OTP step on success', async () => {
     mockInitiateLogin.mockResolvedValue({ success: true, requiresOTP: true, message: 'OTP sent' });
     render(<LoginPage />);
@@ -78,7 +70,6 @@ describe('LoginPage', () => {
     expect(screen.getByText('OTP sent')).toBeInTheDocument();
   });
 
-  // OTP functionality is not implemented in the current component
   it.skip('submits OTP and completes login flow', async () => {
     mockInitiateLogin.mockResolvedValue({ success: true, requiresOTP: true });
     mockVerifyOTP.mockResolvedValue({ success: true });
@@ -100,7 +91,6 @@ describe('LoginPage', () => {
     await waitFor(() => expect(mockCompleteLoginAfterOTP).toHaveBeenCalled());
   });
 
-  // OTP functionality is not implemented in the current component
   it.skip('allows resending OTP and going back to login', async () => {
     mockInitiateLogin.mockResolvedValue({ success: true, requiresOTP: true });
     mockResendOTP.mockResolvedValue({ success: true, message: 'New OTP sent' });

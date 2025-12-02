@@ -1,14 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-
 import { flushTimers } from '../helpers/testUtils';
 
 const REGISTRATIONS_KEY = 'terpspark_registrations';
 const WAITLIST_KEY = 'terpspark_waitlist';
 
-// Mock fetch globally
 global.fetch = vi.fn();
 
-// Mock authService.getAuthToken
 vi.mock('@services/authService', () => ({
   getAuthToken: () => 'mock-token'
 }));

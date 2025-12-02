@@ -83,7 +83,6 @@ describe('ApprovalsPage', () => {
 
     render(<ApprovalsPage />);
 
-    // "Approvals" appears in both Navigation and page content, so use getAllByText
     await waitFor(() => expect(screen.getAllByText('Approvals').length).toBeGreaterThan(0));
 
     expect(screen.getByText('Pending Organizers')).toBeInTheDocument();

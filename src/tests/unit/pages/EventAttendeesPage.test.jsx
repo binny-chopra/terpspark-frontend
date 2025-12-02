@@ -120,10 +120,9 @@ describe('EventAttendeesPage', () => {
     render(<EventAttendeesPage />);
     await screen.findByText('Innovation Summit');
 
-    // Mock filtered results for search
     mockGetEventAttendees.mockResolvedValueOnce({
       success: true,
-      attendees: [attendeesFixture[0]], // Only Alice
+      attendees: [attendeesFixture[0]],
       statistics: {
         totalRegistrations: 1,
         totalAttendees: 1,
@@ -140,7 +139,6 @@ describe('EventAttendeesPage', () => {
       expect(screen.queryByText('Bob Smith')).not.toBeInTheDocument();
     });
 
-    // Mock empty results for unknown search
     mockGetEventAttendees.mockResolvedValueOnce({
       success: true,
       attendees: [],
@@ -178,7 +176,6 @@ describe('EventAttendeesPage', () => {
     const textarea = screen.getByPlaceholderText('Enter your announcement message...');
     fireEvent.change(textarea, { target: { value: 'Hello attendees!' } });
 
-    // Find the modal container by navigating from the textarea
     const modalContainer = within(textarea.closest('.bg-white'));
     const modalSendButton = modalContainer.getByRole('button', { name: 'Send Announcement' });
     fireEvent.click(modalSendButton);

@@ -10,7 +10,6 @@ import {
 describe('storage utils', () => {
   beforeEach(() => {
     localStorage.clear();
-    vi.restoreAllMocks();
   });
 
   it('should set and get JSON-serialized values', () => {

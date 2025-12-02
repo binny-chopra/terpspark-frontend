@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { flushTimers, setupServiceBeforeEach, setupServiceAfterEach } from '../helpers/testUtils';
 
-// Mock fetch globally
 global.fetch = vi.fn();
 
 describe('eventService', () => {
@@ -14,7 +13,6 @@ describe('eventService', () => {
 
   afterEach(() => {
     setupServiceAfterEach();
-    vi.unstubAllGlobals?.();
   });
 
   it('filters events by search term and availability', async () => {

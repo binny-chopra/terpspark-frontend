@@ -103,7 +103,6 @@ describe('EventsPage', () => {
     mockGetAllEvents.mockResolvedValue(mockEventsResponse());
     mockCheckRegistrationStatus.mockResolvedValue({ isRegistered: false, isWaitlisted: false });
     mockRegisterForEvent.mockResolvedValue({ success: true, message: 'Registered!' });
-    window.alert = vi.fn();
   });
 
   it('shows loading spinner while events are fetched', () => {

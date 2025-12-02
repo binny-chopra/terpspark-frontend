@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import userEvent from '@testing-library/user-event';
 import Header from '@components/layout/Header';
 import { AuthProvider } from '@context/AuthContext';
 import * as authService from '@services/authService';
@@ -18,7 +17,6 @@ vi.mock('react-router-dom', async () => {
 });
 
 const renderWithProviders = (user, unreadCount = 0) => {
-  // Set up mocks before rendering
   authService.validateSession.mockResolvedValue({
     valid: !!user,
     user: user
@@ -37,7 +35,6 @@ const renderWithProviders = (user, unreadCount = 0) => {
     </BrowserRouter>
   );
 
-  // Wait for AuthContext to initialize
   return result;
 };
 
@@ -59,14 +56,11 @@ describe('Header', () => {
     });
   });
 
-  // Note: Notification bell is currently hidden in the Header component (commented out)
-  // These tests are skipped until the feature is re-enabled
   it.skip('displays notification bell', async () => {
     const user = { id: 1, email: 'test@umd.edu', name: 'Test User', role: 'student' };
     renderWithProviders(user);
 
     await waitFor(() => {
-      // There might be multiple notification bells (desktop and mobile), so use getAllByLabelText
       const bellButtons = screen.getAllByLabelText(/notifications/i);
       expect(bellButtons.length).toBeGreaterThan(0);
     });
@@ -77,7 +71,6 @@ describe('Header', () => {
     renderWithProviders(user, 5);
 
     await waitFor(() => {
-      // There might be multiple "5" badges (desktop and mobile), so use getAllByText
       const badges = screen.getAllByText('5');
       expect(badges.length).toBeGreaterThan(0);
     });

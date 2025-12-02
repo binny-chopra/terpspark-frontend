@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { flushTimers, setupServiceBeforeEach, setupServiceAfterEach } from '../helpers/testUtils';
 
-// Mock fetch globally
 global.fetch = vi.fn();
 
 describe('authService', () => {
@@ -11,7 +10,6 @@ describe('authService', () => {
     global.fetch.mockClear();
     authService = await setupServiceBeforeEach('@services/authService');
     localStorage.clear();
-    vi.restoreAllMocks();
   });
 
   afterEach(() => {
