@@ -7,9 +7,17 @@ import '../setup/layoutMocks';
 const mockNavigate = vi.fn();
 const mockGetCategories = vi.fn();
 const mockCreateEvent = vi.fn();
+const mockAddToast = vi.fn();
+
+// Mock fetch for venues
+global.fetch = vi.fn();
 
 vi.mock('@context/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'org-1', name: 'Organizer One' } }),
+}));
+
+vi.mock('@context/ToastContext', () => ({
+  useToast: () => ({ addToast: mockAddToast }),
 }));
 
 vi.mock('react-router-dom', () => ({
@@ -30,7 +38,12 @@ const categoriesFixture = [
   { id: 'cat-2', name: 'Social', slug: 'social' },
 ];
 
-const fillValidForm = () => {
+const venuesFixture = [
+  { id: 1, name: 'Stamp Student Union', building: 'Stamp Student Union', capacity: 500, isActive: true },
+  { id: 2, name: 'Iribe Center', building: 'Iribe Center for Computer Science', capacity: 300, isActive: true },
+];
+
+const fillValidForm = async () => {
   fireEvent.change(screen.getByPlaceholderText(/fall career fair/i), {
     target: { value: 'Tech Meetup' },
   });
@@ -41,11 +54,15 @@ const fillValidForm = () => {
   fireEvent.change(getFieldByLabel('Event Date *'), { target: { value: '2099-01-01' } });
   fireEvent.change(getFieldByLabel('Start Time *'), { target: { value: '10:00' } });
   fireEvent.change(getFieldByLabel('End Time *'), { target: { value: '11:00' } });
-  fireEvent.change(getFieldByLabel('Venue Name *'), {
-    target: { value: 'Grand Ballroom' },
+  
+  // Wait for venue dropdown to be populated
+  await waitFor(() => {
+    const venueSelect = getFieldByLabel('Venue *');
+    expect(venueSelect).toBeInTheDocument();
   });
-  fireEvent.change(getFieldByLabel('Building/Location *'), {
-    target: { value: 'Stamp' },
+  
+  fireEvent.change(getFieldByLabel('Venue *'), {
+    target: { value: '1' },
   });
   fireEvent.change(getFieldByLabel('Capacity *'), {
     target: { value: '100' },
@@ -61,10 +78,15 @@ const fillValidForm = () => {
 describe('CreateEventPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    window.alert = vi.fn();
+    global.fetch.mockClear();
     window.confirm = vi.fn().mockReturnValue(true);
     mockGetCategories.mockResolvedValue({ success: true, categories: categoriesFixture });
     mockCreateEvent.mockResolvedValue({ success: true });
+    // Mock venues fetch
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ venues: venuesFixture })
+    });
   });
 
   it('loads categories on mount and renders the form', async () => {
@@ -89,8 +111,9 @@ describe('CreateEventPage', () => {
   it('submits form successfully and navigates to My Events', async () => {
     render(<CreateEventPage />);
     await waitFor(() => expect(mockGetCategories).toHaveBeenCalled());
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
 
-    fillValidForm();
+    await fillValidForm();
     fireEvent.click(screen.getByText('Create Event'));
 
     await waitFor(() =>
@@ -104,9 +127,7 @@ describe('CreateEventPage', () => {
       ),
     );
 
-    expect(window.alert).toHaveBeenCalledWith(
-      'Event created successfully! It will be visible after admin approval.',
-    );
+    expect(mockAddToast).toHaveBeenCalledWith('Event created successfully! Awaiting admin approval.', 'success');
     expect(mockNavigate).toHaveBeenCalledWith('/my-events');
   });
 
@@ -115,12 +136,13 @@ describe('CreateEventPage', () => {
 
     render(<CreateEventPage />);
     await waitFor(() => expect(mockGetCategories).toHaveBeenCalled());
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
 
-    fillValidForm();
+    await fillValidForm();
     fireEvent.click(screen.getByText('Create Event'));
 
     await waitFor(() => expect(mockCreateEvent).toHaveBeenCalled());
-    expect(window.alert).toHaveBeenCalledWith('Failed');
+    expect(mockAddToast).toHaveBeenCalledWith('Failed', 'error');
   });
 
   it('cancels and navigates away when user confirms', async () => {
