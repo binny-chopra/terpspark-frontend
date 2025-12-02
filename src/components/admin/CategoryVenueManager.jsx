@@ -13,6 +13,8 @@ const CategoryVenueManager = ({
     const [editingItem, setEditingItem] = useState(null);
     const [formData, setFormData] = useState({});
     const [errors, setErrors] = useState({});
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
 
     const isCategory = type === 'category';
     const Icon = isCategory ? Tag : MapPin;
@@ -69,10 +71,21 @@ const CategoryVenueManager = ({
     };
 
     const handleRetire = async (item) => {
-        const action = item.isActive !== false ? 'retire' : 'reactivate';
-        if (window.confirm(`Are you sure you want to ${action} "${item.name}"?`)) {
-            await onRetire(item.id);
+        setItemToDelete(item);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmRetire = async () => {
+        if (itemToDelete) {
+            await onRetire(itemToDelete.id);
+            setShowDeleteConfirm(false);
+            setItemToDelete(null);
         }
+    };
+
+    const cancelRetire = () => {
+        setShowDeleteConfirm(false);
+        setItemToDelete(null);
     };
 
     const getColorClass = (color) => {
@@ -285,6 +298,35 @@ const CategoryVenueManager = ({
                             <button
                                 onClick={resetForm}
                                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && itemToDelete && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg max-w-md w-full p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                            {itemToDelete.isActive !== false ? 'Retire' : 'Reactivate'} {isCategory ? 'Category' : 'Venue'}
+                        </h3>
+                        <p className="text-gray-600 mb-6">
+                            Are you sure you want to {itemToDelete.isActive !== false ? 'retire' : 'reactivate'} "{itemToDelete.name}"?
+                        </p>
+                        <div className="flex space-x-3">
+                            <button
+                                onClick={confirmRetire}
+                                disabled={loading}
+                                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
+                            >
+                                {loading ? 'Processing...' : 'OK'}
+                            </button>
+                            <button
+                                onClick={cancelRetire}
+                                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                             >
                                 Cancel
                             </button>
