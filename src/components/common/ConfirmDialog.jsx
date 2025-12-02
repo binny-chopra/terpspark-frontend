@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { AlertTriangle, Info, CheckCircle, XCircle, X } from 'lucide-react';
 
 const ConfirmDialog = ({

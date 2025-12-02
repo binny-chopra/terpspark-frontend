@@ -470,17 +470,8 @@ describe('adminService', () => {
 
   it('handles network errors gracefully', async () => {
     global.fetch.mockRejectedValueOnce(new Error('Network error'));
-
-    vi.useFakeTimers();
-    const promise = adminService.fetchVenues();
-    await flushTimers();
-
-    try {
-      await promise;
-      expect.fail('Should have thrown an error');
-    } catch (error) {
-      expect(error.message).toBe('Network error');
-    }
+    vi.useRealTimers();
+    await expect(adminService.fetchVenues()).rejects.toThrow('Network error');
   });
 
   it('handles error responses with detail message', async () => {
