@@ -8,9 +8,14 @@ const mockGetUserRegistrations = vi.fn();
 const mockGetUserWaitlist = vi.fn();
 const mockCancelRegistration = vi.fn();
 const mockLeaveWaitlist = vi.fn();
+const mockAddToast = vi.fn();
 
 vi.mock('@context/AuthContext', () => ({
   useAuth: () => ({ user: mockUser }),
+}));
+
+vi.mock('@context/ToastContext', () => ({
+  useToast: () => ({ addToast: mockAddToast }),
 }));
 
 const mockNavigate = vi.fn();
@@ -98,7 +103,6 @@ describe('MyRegistrationsPage', () => {
     resolveData();
     mockCancelRegistration.mockResolvedValue({ success: true });
     mockLeaveWaitlist.mockResolvedValue({ success: true });
-    window.alert = vi.fn();
   });
 
   afterEach(() => {
@@ -136,7 +140,7 @@ describe('MyRegistrationsPage', () => {
     fireEvent.click(within(upcomingCard).getByText('cancel'));
 
     await waitFor(() => expect(mockCancelRegistration).toHaveBeenCalledWith('user-1', 'reg-1'));
-    expect(window.alert).toHaveBeenCalledWith('Registration cancelled successfully');
+    expect(mockAddToast).toHaveBeenCalledWith('Registration cancelled successfully', 'warning');
     await waitFor(() => expect(mockGetUserRegistrations).toHaveBeenCalledTimes(2));
     expect(mockGetUserWaitlist).toHaveBeenCalledTimes(2);
   });
@@ -151,7 +155,7 @@ describe('MyRegistrationsPage', () => {
     fireEvent.click(within(waitlistCard).getByText('leave'));
 
     await waitFor(() => expect(mockLeaveWaitlist).toHaveBeenCalledWith('user-1', 'wait-1'));
-    expect(window.alert).toHaveBeenCalledWith('Removed from waitlist successfully');
+    expect(mockAddToast).toHaveBeenCalledWith('Removed from waitlist successfully', 'warning');
     await waitFor(() => expect(mockGetUserRegistrations).toHaveBeenCalledTimes(2));
     expect(mockGetUserWaitlist).toHaveBeenCalledTimes(2);
   });

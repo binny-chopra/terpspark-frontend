@@ -59,7 +59,9 @@ describe('Header', () => {
     });
   });
 
-  it('displays notification bell', async () => {
+  // Note: Notification bell is currently hidden in the Header component (commented out)
+  // These tests are skipped until the feature is re-enabled
+  it.skip('displays notification bell', async () => {
     const user = { id: 1, email: 'test@umd.edu', name: 'Test User', role: 'student' };
     renderWithProviders(user);
 
@@ -70,7 +72,7 @@ describe('Header', () => {
     });
   });
 
-  it('shows unread count badge when there are unread notifications', async () => {
+  it.skip('shows unread count badge when there are unread notifications', async () => {
     const user = { id: 1, email: 'test@umd.edu', name: 'Test User', role: 'student' };
     renderWithProviders(user, 5);
 
