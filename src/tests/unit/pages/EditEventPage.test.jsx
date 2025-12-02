@@ -20,7 +20,7 @@ vi.mock('@context/ToastContext', () => ({
 }));
 
 vi.mock('react-router-dom', () => ({
-  useParams: () => ({ eventId: '1' }), // Match the numeric ID
+  useParams: () => ({ eventId: '1' }),
   useNavigate: () => mockNavigate,
   useLocation: () => ({ pathname: '/edit-event/1' }),
 }));
@@ -43,15 +43,13 @@ const draftEvent = {
   startTime: '10:00',
   endTime: '11:00',
   venue: 'Stamp Student Union',
-  venueId: 1,
+  venueId: '1',
   location: 'Grand Ballroom',
   capacity: 150,
   imageUrl: '',
   tags: ['tech', 'lecture'],
   status: 'draft',
 };
-
-const pendingEvent = { ...draftEvent, status: 'pending' };
 
 const categories = [
   { id: 'cat-1', name: 'Career' },
@@ -64,7 +62,7 @@ const loadDraftSuccess = () => {
 };
 
 const venuesFixture = [
-  { id: 1, name: 'Stamp Student Union', building: 'Grand Ballroom', capacity: 500, isActive: true }
+  { id: '1', name: 'Stamp Student Union', building: 'Grand Ballroom', capacity: 500, isActive: true }
 ];
 
 describe('EditEventPage', () => {
@@ -91,8 +89,8 @@ describe('EditEventPage', () => {
     loadDraftSuccess();
     render(<EditEventPage />);
 
-    await waitFor(() => expect(screen.getByText('Edit Event')).toBeInTheDocument(), { timeout: 3000 });
-    await waitFor(() => expect(screen.getByDisplayValue('Tech Talk')).toBeInTheDocument(), { timeout: 3000 });
+    await waitFor(() => expect(screen.getByText('Edit Event')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByDisplayValue('Tech Talk')).toBeInTheDocument());
     expect(screen.getByRole('button', { name: 'Update Event' })).toBeInTheDocument();
   });
 
@@ -132,53 +130,168 @@ describe('EditEventPage', () => {
     );
 
     expect(mockAddToast).toHaveBeenCalledWith('Event updated successfully', 'success');
-    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/my-events'), {
-      timeout: 2000,
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/my-events'));
+  });
+
+  it('displays venue details when venue is selected', async () => {
+    loadDraftSuccess();
+    render(<EditEventPage />);
+
+    await waitFor(() => expect(screen.getByText('Edit Event')).toBeInTheDocument());
+
+    const venueLabel = await screen.findByText('Venue *');
+    const venueSelect = venueLabel.parentElement.querySelector('select');
+    fireEvent.change(venueSelect, { target: { value: '1' } });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Selected Venue:/i)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Max Capacity:/i)).toBeInTheDocument();
+  });
+
+  it('shows validation error for empty description', async () => {
+    loadDraftSuccess();
+    render(<EditEventPage />);
+
+    await waitFor(() => expect(screen.getByText('Edit Event')).toBeInTheDocument());
+
+    const descriptionTextarea = screen.getByPlaceholderText(/detailed description/i);
+    fireEvent.change(descriptionTextarea, { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Update Event' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Event description is required')).toBeInTheDocument();
     });
   });
 
-  it.skip('requires change note when editing pending events', async () => {
-    const pendingEventWithVenue = { ...pendingEvent, venueId: 1 };
+  it('shows validation error for description too short', async () => {
+    loadDraftSuccess();
+    render(<EditEventPage />);
+
+    await waitFor(() => expect(screen.getByText('Edit Event')).toBeInTheDocument());
+
+    const descriptionTextarea = screen.getByPlaceholderText(/detailed description/i);
+    fireEvent.change(descriptionTextarea, { target: { value: 'Short' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Update Event' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Description must be at least 50 characters')).toBeInTheDocument();
+    });
+  });
+
+  it('displays character count for description', async () => {
+    loadDraftSuccess();
+    render(<EditEventPage />);
+
+    await waitFor(() => expect(screen.getByText('Edit Event')).toBeInTheDocument());
+
+    const descriptionTextarea = screen.getByPlaceholderText(/detailed description/i);
+    fireEvent.change(descriptionTextarea, { target: { value: 'New description text' } });
+
+    await waitFor(() => {
+      expect(screen.getByText(/20 characters/)).toBeInTheDocument();
+    });
+  });
+
+  it('shows validation error when end time is before start time', async () => {
+    loadDraftSuccess();
+    render(<EditEventPage />);
+
+    await waitFor(() => expect(screen.getByText('Edit Event')).toBeInTheDocument());
+
+    const startTimeLabel = screen.getByText('Start Time *');
+    const startTimeInput = startTimeLabel.parentElement.querySelector('input[type="time"]');
+    const endTimeLabel = screen.getByText('End Time *');
+    const endTimeInput = endTimeLabel.parentElement.querySelector('input[type="time"]');
+
+    fireEvent.change(startTimeInput, { target: { value: '14:00' } });
+    fireEvent.change(endTimeInput, { target: { value: '13:00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Update Event' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('End time must be after start time')).toBeInTheDocument();
+    });
+  });
+
+  it('shows validation error when capacity exceeds venue capacity', async () => {
+    loadDraftSuccess();
+    render(<EditEventPage />);
+
+    await waitFor(() => expect(screen.getByText('Edit Event')).toBeInTheDocument());
+    await waitFor(() => {
+      const venueLabel = screen.getByText('Venue *');
+      const venueSelect = venueLabel.parentElement.querySelector('select');
+      expect(venueSelect).toBeInTheDocument();
+    });
+
+    const venueLabel = screen.getByText('Venue *');
+    const venueSelect = venueLabel.parentElement.querySelector('select');
+    fireEvent.change(venueSelect, { target: { value: '1' } });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Selected Venue:/i)).toBeInTheDocument();
+    });
+
+    const capacityLabel = screen.getByText('Capacity *');
+    const capacityInput = capacityLabel.parentElement.querySelector('input[type="number"]');
+    fireEvent.change(capacityInput, { target: { value: '600' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Update Event' }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Capacity cannot exceed venue capacity of 500/)).toBeInTheDocument();
+    });
+  });
+
+  it('allows entering tags', async () => {
+    loadDraftSuccess();
+    render(<EditEventPage />);
+
+    await waitFor(() => expect(screen.getByText('Edit Event')).toBeInTheDocument());
+
+    const tagsInput = screen.getByPlaceholderText(/comma-separated/i);
+    fireEvent.change(tagsInput, { target: { value: 'networking, career, tech' } });
+
+    expect(tagsInput).toHaveValue('networking, career, tech');
+  });
+
+  it('allows entering image URL', async () => {
+    loadDraftSuccess();
+    render(<EditEventPage />);
+
+    await waitFor(() => expect(screen.getByText('Edit Event')).toBeInTheDocument());
+
+    const imageInput = screen.getByPlaceholderText(/https:\/\/example.com/i);
+    fireEvent.change(imageInput, { target: { value: 'https://example.com/image.jpg' } });
+
+    expect(imageInput).toHaveValue('https://example.com/image.jpg');
+  });
+
+  it('shows error toast and navigates when event is not found', async () => {
     mockGetCategories.mockResolvedValue({ success: true, categories });
-    mockGetOrganizerEvents.mockResolvedValue({ success: true, events: [pendingEventWithVenue] });
+    mockGetOrganizerEvents.mockResolvedValue({ success: true, events: [] });
+
+    render(<EditEventPage />);
+
+    await waitFor(() => {
+      expect(mockAddToast).toHaveBeenCalledWith('Event not found', 'error');
+      expect(mockNavigate).toHaveBeenCalledWith('/my-events');
+    });
+  });
+
+  it('shows error toast when update fails', async () => {
+    loadDraftSuccess();
+    mockUpdateEvent.mockResolvedValue({ success: false, error: 'Update failed' });
 
     render(<EditEventPage />);
     await waitFor(() => expect(screen.getByText('Edit Event')).toBeInTheDocument());
 
     const titleInput = screen.getByPlaceholderText(/fall career fair/i);
-    fireEvent.change(titleInput, {
-      target: { value: 'Pending Update' },
-    });
+    fireEvent.change(titleInput, { target: { value: 'Updated Title' } });
     fireEvent.click(screen.getByRole('button', { name: 'Update Event' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Change note is required when editing pending events')).toBeInTheDocument();
+      expect(mockAddToast).toHaveBeenCalledWith('Update failed', 'error');
     });
-
-    const changeNoteInput = screen.getByPlaceholderText(/briefly explain what changes/i);
-    fireEvent.change(changeNoteInput, {
-      target: { value: 'Adjusted schedule' },
-    });
-
-    mockUpdateEvent.mockResolvedValue({ success: true });
-    fireEvent.click(screen.getByRole('button', { name: 'Update Event' }));
-
-    await waitFor(() => expect(mockUpdateEvent).toHaveBeenCalled());
-    expect(mockAddToast).toHaveBeenCalledWith('Event resubmitted for approval', 'success');
-  });
-
-  it.skip('shows cannot edit screen when event is published', async () => {
-    const publishedEvent = { ...draftEvent, status: 'published', venueId: 1 };
-    mockGetCategories.mockResolvedValue({ success: true, categories });
-    mockGetOrganizerEvents.mockResolvedValue({ success: true, events: [publishedEvent] });
-
-    render(<EditEventPage />);
-
-    await waitFor(() => {
-      const heading = screen.getByRole('heading', { name: /cannot edit event/i });
-      expect(heading).toBeInTheDocument();
-    });
-    expect(screen.getByText(/Events with status "published" cannot be edited/i)).toBeInTheDocument();
   });
 
   it('navigates back when cancel is confirmed', async () => {
