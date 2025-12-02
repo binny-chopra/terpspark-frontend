@@ -4,40 +4,25 @@ import LoginPage from '@pages/LoginPage';
 
 const mockNavigate = vi.fn();
 let mockIsAuthenticated = false;
-const mockCompleteLoginAfterOTP = vi.fn();
-
-const mockInitiateLogin = vi.fn();
-const mockVerifyOTP = vi.fn();
-const mockResendOTP = vi.fn();
-const mockClearPendingLogin = vi.fn();
+const mockLogin = vi.fn();
 
 vi.mock('@context/AuthContext', () => ({
   useAuth: () => ({
-    completeLoginAfterOTP: mockCompleteLoginAfterOTP,
+    login: mockLogin,
     isAuthenticated: mockIsAuthenticated,
   }),
 }));
 
 vi.mock('react-router-dom', () => ({
   Navigate: ({ to }) => <div data-testid="navigate" data-to={to} />,
-}));
-
-vi.mock('@services/authService', () => ({
-  initiateLogin: (...args) => mockInitiateLogin(...args),
-  verifyOTP: (...args) => mockVerifyOTP(...args),
-  resendOTP: (...args) => mockResendOTP(...args),
-  clearPendingLogin: (...args) => mockClearPendingLogin(...args),
+  useNavigate: () => mockNavigate,
+  useLocation: () => ({ pathname: '/login' }),
 }));
 
 describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    window.alert = vi.fn();
     mockIsAuthenticated = false;
-    mockInitiateLogin.mockReset();
-    mockVerifyOTP.mockReset();
-    mockResendOTP.mockReset();
-    mockClearPendingLogin.mockReset();
   });
 
   it('redirects to dashboard when already authenticated', () => {
@@ -48,7 +33,7 @@ describe('LoginPage', () => {
 
   it('shows validation error for missing credentials', () => {
     render(<LoginPage />);
-    fireEvent.click(screen.getByText('Log In'));
+    fireEvent.click(screen.getByText('Sign In'));
     expect(screen.getByText('Please enter both email and password')).toBeInTheDocument();
   });
 
@@ -56,76 +41,130 @@ describe('LoginPage', () => {
     render(<LoginPage />);
     fireEvent.change(screen.getByLabelText('University Email'), { target: { value: 'user@gmail.com' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password' } });
-    fireEvent.click(screen.getByText('Log In'));
+    fireEvent.click(screen.getByText('Sign In'));
     expect(screen.getByText('Please use a valid UMD email address')).toBeInTheDocument();
   });
 
-  it('initiates login and shows OTP step on success', async () => {
-    mockInitiateLogin.mockResolvedValue({ success: true, requiresOTP: true, message: 'OTP sent' });
+  it('shows loading state during login', async () => {
+    mockLogin.mockImplementation(() => new Promise(() => {}));
     render(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText('University Email'), { target: { value: 'user@umd.edu' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password' } });
-    fireEvent.click(screen.getByText('Log In'));
 
-    await waitFor(() => expect(mockInitiateLogin).toHaveBeenCalledWith('user@umd.edu', 'password'));
-    expect(screen.getByText('Enter Verification Code')).toBeInTheDocument();
-    expect(screen.getByText('OTP sent')).toBeInTheDocument();
+    const signInButton = screen.getByRole('button', { name: 'Sign In' });
+    fireEvent.click(signInButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Signing in...')).toBeInTheDocument();
+    });
+
+    expect(signInButton).toBeDisabled();
   });
 
-  it('submits OTP and completes login flow', async () => {
-    mockInitiateLogin.mockResolvedValue({ success: true, requiresOTP: true });
-    mockVerifyOTP.mockResolvedValue({ success: true });
-    mockCompleteLoginAfterOTP.mockResolvedValue({ success: true });
-
+  it('displays error message when login fails', async () => {
+    mockLogin.mockResolvedValue({ success: false, error: 'Invalid credentials' });
     render(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText('University Email'), { target: { value: 'user@umd.edu' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password' } });
-    fireEvent.click(screen.getByText('Log In'));
+    fireEvent.click(screen.getByText('Sign In'));
 
-    await screen.findByText('Enter Verification Code');
-
-    const otpInput = screen.getByLabelText('Verification Code');
-    fireEvent.change(otpInput, { target: { value: '123456' } });
-    fireEvent.click(screen.getByText('Verify & Log In'));
-
-    await waitFor(() => expect(mockVerifyOTP).toHaveBeenCalledWith('123456'));
-    await waitFor(() => expect(mockCompleteLoginAfterOTP).toHaveBeenCalled());
+    await waitFor(() => {
+      expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
+    });
   });
 
-  it('allows resending OTP and going back to login', async () => {
-    mockInitiateLogin.mockResolvedValue({ success: true, requiresOTP: true });
-    mockResendOTP.mockResolvedValue({ success: true, message: 'New OTP sent' });
+  it('clears error when user starts typing', async () => {
+    mockLogin.mockResolvedValue({ success: false, error: 'Invalid credentials' });
     render(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText('University Email'), { target: { value: 'user@umd.edu' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password' } });
-    fireEvent.click(screen.getByText('Log In'));
+    fireEvent.click(screen.getByText('Sign In'));
 
-    await screen.findByText('Enter Verification Code');
+    await waitFor(() => {
+      expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
+    });
 
-    fireEvent.click(screen.getByText('Resend Code'));
-    await waitFor(() => expect(mockResendOTP).toHaveBeenCalled());
-    expect(screen.getByText('New OTP sent')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('University Email'), { target: { value: 'new@umd.edu' } });
 
-    fireEvent.click(screen.getByText('← Back to login'));
-    expect(mockClearPendingLogin).toHaveBeenCalled();
-    expect(screen.getByText('Log In')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText('Invalid credentials')).not.toBeInTheDocument();
+    });
+  });
+
+  it('submits form when Enter key is pressed in email field', async () => {
+    mockLogin.mockResolvedValue({ success: true });
+    render(<LoginPage />);
+
+    const emailInput = screen.getByLabelText('University Email');
+    const passwordInput = screen.getByLabelText('Password');
+
+    fireEvent.change(emailInput, { target: { value: 'user@umd.edu' } });
+    fireEvent.change(passwordInput, { target: { value: 'password' } });
+    fireEvent.keyPress(emailInput, { key: 'Enter', charCode: 13 });
+
+    await waitFor(() => {
+      expect(mockLogin).toHaveBeenCalledWith('user@umd.edu', 'password');
+    });
+  });
+
+  it('submits form when Enter key is pressed in password field', async () => {
+    mockLogin.mockResolvedValue({ success: true });
+    render(<LoginPage />);
+
+    const emailInput = screen.getByLabelText('University Email');
+    const passwordInput = screen.getByLabelText('Password');
+
+    fireEvent.change(emailInput, { target: { value: 'user@umd.edu' } });
+    fireEvent.change(passwordInput, { target: { value: 'password' } });
+    fireEvent.keyPress(passwordInput, { key: 'Enter', charCode: 13 });
+
+    await waitFor(() => {
+      expect(mockLogin).toHaveBeenCalledWith('user@umd.edu', 'password');
+    });
+  });
+
+  it('disables buttons during loading', async () => {
+    mockLogin.mockImplementation(() => new Promise(() => {}));
+    render(<LoginPage />);
+
+    fireEvent.change(screen.getByLabelText('University Email'), { target: { value: 'user@umd.edu' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password' } });
+
+    const signInButton = screen.getByRole('button', { name: 'Sign In' });
+    fireEvent.click(signInButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Sign Up' })).toBeDisabled();
+    });
   });
 
   it('shows registration message when registration button is clicked', () => {
     render(<LoginPage />);
-    fireEvent.click(screen.getByText('Registration'));
-    expect(
-      screen.getByText('Registration is currently being developed. Please check back soon!'),
-    ).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Sign Up'));
+    expect(mockNavigate).toHaveBeenCalledWith('/register');
   });
 
-  it('quick login buttons populate credentials', () => {
+  it('populates credentials for student quick login', () => {
+    render(<LoginPage />);
+    fireEvent.click(screen.getByText('Student'));
+    expect(screen.getByDisplayValue('student@umd.edu')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('student123')).toBeInTheDocument();
+  });
+
+  it('populates credentials for organizer quick login', () => {
     render(<LoginPage />);
     fireEvent.click(screen.getByText('Organizer'));
     expect(screen.getByDisplayValue('organizer@umd.edu')).toBeInTheDocument();
     expect(screen.getByDisplayValue('organizer123')).toBeInTheDocument();
+  });
+
+  it('populates credentials for admin quick login', () => {
+    render(<LoginPage />);
+    fireEvent.click(screen.getByText('Admin'));
+    expect(screen.getByDisplayValue('admin@umd.edu')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('admin123')).toBeInTheDocument();
   });
 });

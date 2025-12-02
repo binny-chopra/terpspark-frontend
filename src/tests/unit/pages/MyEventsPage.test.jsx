@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import MyEventsPage from '@pages/MyEventsPage';
 import '../setup/layoutMocks';
@@ -7,11 +7,16 @@ const mockNavigate = vi.fn();
 const mockGetOrganizerEvents = vi.fn();
 const mockCancelEvent = vi.fn();
 const mockDuplicateEvent = vi.fn();
+const mockAddToast = vi.fn();
 
 const mockUser = { id: 'org-1', name: 'Organizer One' };
 
 vi.mock('@context/AuthContext', () => ({
   useAuth: () => ({ user: mockUser }),
+}));
+
+vi.mock('@context/ToastContext', () => ({
+  useToast: () => ({ addToast: mockAddToast }),
 }));
 
 vi.mock('react-router-dom', () => ({
@@ -55,19 +60,10 @@ const resolveEvents = () => {
 describe('MyEventsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockNavigate.mockReset();
-    mockGetOrganizerEvents.mockReset();
-    mockCancelEvent.mockReset();
-    mockDuplicateEvent.mockReset();
     resolveEvents();
     mockCancelEvent.mockResolvedValue({ success: true });
     mockDuplicateEvent.mockResolvedValue({ success: true });
-    window.alert = vi.fn();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
+    window.confirm = vi.fn().mockReturnValue(true);
   });
 
   it('shows loading spinner while fetching events', () => {
@@ -122,7 +118,7 @@ describe('MyEventsPage', () => {
 
     fireEvent.click(within(draftCard).getByText('cancel'));
     await waitFor(() => expect(mockCancelEvent).toHaveBeenCalledWith('evt-1', 'org-1'));
-    expect(window.alert).toHaveBeenCalledWith('Event cancelled successfully');
+    expect(mockAddToast).toHaveBeenCalledWith('Event cancelled successfully', 'warning');
     await waitFor(() => expect(mockGetOrganizerEvents).toHaveBeenCalledTimes(2));
   });
 
@@ -141,7 +137,7 @@ describe('MyEventsPage', () => {
 
     fireEvent.click(within(publishedCard).getByText('duplicate'));
     await waitFor(() => expect(mockDuplicateEvent).toHaveBeenCalledWith('evt-3', 'org-1'));
-    expect(window.alert).toHaveBeenCalledWith('Event duplicated successfully as a draft');
+    expect(mockAddToast).toHaveBeenCalledWith('Event duplicated successfully as a draft', 'success');
     await waitFor(() => expect(mockGetOrganizerEvents).toHaveBeenCalledTimes(2));
   });
 

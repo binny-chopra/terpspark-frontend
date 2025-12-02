@@ -9,9 +9,14 @@ const mockApproveOrganizer = vi.fn();
 const mockRejectOrganizer = vi.fn();
 const mockApproveEvent = vi.fn();
 const mockRejectEvent = vi.fn();
+const mockAddToast = vi.fn();
 
 vi.mock('@context/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'admin-42', name: 'Admin', role: 'admin' } }),
+}));
+
+vi.mock('@context/ToastContext', () => ({
+  useToast: () => ({ addToast: mockAddToast }),
 }));
 
 const mockNavigate = vi.fn();
@@ -60,7 +65,6 @@ const events = [
 describe('ApprovalsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    window.alert = vi.fn();
   });
 
   it('displays loading spinner while data is fetched', async () => {
@@ -79,7 +83,6 @@ describe('ApprovalsPage', () => {
 
     render(<ApprovalsPage />);
 
-    // "Approvals" appears in both Navigation and page content, so use getAllByText
     await waitFor(() => expect(screen.getAllByText('Approvals').length).toBeGreaterThan(0));
 
     expect(screen.getByText('Pending Organizers')).toBeInTheDocument();
@@ -113,7 +116,7 @@ describe('ApprovalsPage', () => {
     fireEvent.click(approveButton);
 
     await waitFor(() => expect(mockApproveOrganizer).toHaveBeenCalledWith('org-1', { id: 'admin-42', name: 'Admin', role: 'admin' }, 'notes'));
-    expect(window.alert).toHaveBeenCalledWith('Organizer approved successfully!');
+    expect(mockAddToast).toHaveBeenCalledWith('Organizer approved successfully!', 'success');
     await waitFor(() => expect(mockFetchPendingOrganizers).toHaveBeenCalledTimes(2));
     expect(mockFetchPendingEvents).toHaveBeenCalledTimes(2);
   });
