@@ -389,3 +389,9 @@ rm -rf node_modules package-lock.json && npm install
 - [ ] Mobile responsive design works
 - [ ] No console errors
 - [ ] Protected routes redirect correctly
+
+## To run tests:
+npm test
+
+## For test coverage:
+npm test -- --coverage

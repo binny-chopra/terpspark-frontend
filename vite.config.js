@@ -25,5 +25,9 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './test-setup.js',
     css: true,
+    coverage: {
+      reporter: ['text', 'html', 'json']
+    },
+    reporters: ['verbose']
   }
 });
