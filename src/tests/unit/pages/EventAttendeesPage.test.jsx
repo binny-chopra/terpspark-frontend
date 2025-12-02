@@ -101,7 +101,7 @@ describe('EventAttendeesPage', () => {
     render(<EventAttendeesPage />);
 
     await waitFor(() => expect(screen.getByText('Innovation Summit')).toBeInTheDocument());
-    expect(screen.getByText('Total Registered')).toBeInTheDocument();
+    expect(screen.getByText('Total Registrations')).toBeInTheDocument();
     expect(screen.getByText(String(attendeesFixture.length))).toBeInTheDocument();
     expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
     expect(screen.getByText('Bob Smith')).toBeInTheDocument();
@@ -120,13 +120,40 @@ describe('EventAttendeesPage', () => {
     render(<EventAttendeesPage />);
     await screen.findByText('Innovation Summit');
 
+    // Mock filtered results for search
+    mockGetEventAttendees.mockResolvedValueOnce({
+      success: true,
+      attendees: [attendeesFixture[0]], // Only Alice
+      statistics: {
+        totalRegistrations: 1,
+        totalAttendees: 1,
+        checkedIn: 1,
+        notCheckedIn: 0,
+      },
+    });
+
     const searchInput = screen.getByPlaceholderText('Search by name or email...');
     fireEvent.change(searchInput, { target: { value: 'alice' } });
-    expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
-    expect(screen.queryByText('Bob Smith')).not.toBeInTheDocument();
+    
+    await waitFor(() => {
+      expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
+      expect(screen.queryByText('Bob Smith')).not.toBeInTheDocument();
+    });
+
+    // Mock empty results for unknown search
+    mockGetEventAttendees.mockResolvedValueOnce({
+      success: true,
+      attendees: [],
+      statistics: {
+        totalRegistrations: 0,
+        totalAttendees: 0,
+        checkedIn: 0,
+        notCheckedIn: 0,
+      },
+    });
 
     fireEvent.change(searchInput, { target: { value: 'unknown' } });
-    expect(await screen.findByText('No attendees match your search')).toBeInTheDocument();
+    expect(await screen.findByText('No attendees match your search criteria')).toBeInTheDocument();
   });
 
   it('exports CSV when button clicked', async () => {
